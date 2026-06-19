@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -375,7 +376,7 @@ let lastRes = null;
 let comboLastRes = null;
 
 // ═══════════════════════════════════════════════════════
-// MODELO DIXON-COLES
+// MODELO DIXON-COLES + NEGATIVE BINOMIAL (analítico, sin simulación)
 // ═══════════════════════════════════════════════════════
 function poisson(l,k){
   if(l<=0)return k===0?1:0;
@@ -387,6 +388,42 @@ function tau(g1,g2,l1,l2,rho=-0.13){
   if(g1===1&&g2===0)return 1+l2*rho;
   if(g1===1&&g2===1)return 1-rho;
   return 1;
+}
+
+// PUNTO 4 — Negative Binomial: misma idea que Poisson pero permite
+// varianza > media (equipos irregulares). Se calcula con fórmula
+// cerrada (log-gamma), NO con simulación. Ver documento maestro sección 0.
+// disp = ratio varianza/media histórico del equipo (φ). φ=1 → Poisson puro.
+// φ>1 → más irregular. PROVISIONAL: sin datos históricos propios todavía,
+// se usa un valor por defecto razonable (DISP_DEFAULT) hasta calibrar con
+// varianza real de goles por equipo (pendiente API histórica).
+const DISP_DEFAULT = 1.15;
+
+function logGamma(x){
+  const g=7;
+  const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,
+    771.32342877765313,-176.61502916214059,12.507343278686905,
+    -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-logGamma(1-x);
+  x-=1;let a=c[0];const t=x+g+0.5;
+  for(let i=1;i<g+2;i++)a+=c[i]/(x+i);
+  return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+}
+function rFromDisp(lambda,disp){
+  if(!disp||disp<=1.001)return 9999; // ≈ Poisson puro
+  return Math.max(1,lambda/(disp-1));
+}
+function negBinom(mean,k,r){
+  // Parametrización media-dispersión: Var = mean + mean²/r
+  if(mean<=0)return k===0?1:0;
+  if(r>=9999)return poisson(mean,k); // sin sobre-dispersión real → Poisson
+  const p=r/(r+mean);
+  const logP=logGamma(k+r)-logGamma(r)-logGamma(k+1)+r*Math.log(p)+k*Math.log(1-p);
+  return Math.max(0,Math.exp(logP));
+}
+function golesDist(mean,k,disp){
+  const r=rFromDisp(mean,disp);
+  return negBinom(mean,k,r);
 }
 
 function calcular(local,visit,f1=1.0,f2=1.0){
@@ -404,10 +441,13 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*1.1*f1);
   const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*f2);
 
+  const disp1=s1.disp||DISP_DEFAULT;
+  const disp2=s2.disp||DISP_DEFAULT;
+
   let p1=0,pe=0,p2=0;
   const marc=[];
   for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
-    const p=poisson(l1,g1)*poisson(l2,g2)*tau(g1,g2,l1,l2);
+    const p=golesDist(l1,g1,disp1)*golesDist(l2,g2,disp2)*tau(g1,g2,l1,l2);
     if(g1>g2)p1+=p;else if(g1===g2)pe+=p;else p2+=p;
     marc.push({g1,g2,p});
   }
@@ -418,7 +458,7 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   let ou05=0,ou15=0,ou25=0,ou35=0,ou45=0;
   let btts=0;
   for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
-    const p=poisson(l1,g1)*poisson(l2,g2)*tau(g1,g2,l1,l2)/tot;
+    const p=golesDist(l1,g1,disp1)*golesDist(l2,g2,disp2)*tau(g1,g2,l1,l2)/tot;
     const t=g1+g2;
     if(t>0.5)ou05+=p;if(t>1.5)ou15+=p;if(t>2.5)ou25+=p;if(t>3.5)ou35+=p;if(t>4.5)ou45+=p;
     if(g1>0&&g2>0)btts+=p;
