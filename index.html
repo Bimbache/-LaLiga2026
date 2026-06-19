@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,44 +10,30 @@
 body{background:#04080f;color:#ddeeff;font-family:'Barlow',sans-serif;min-height:100vh}
 select,button{font-family:'Barlow',sans-serif}
 :root{
-  --blue:#1e90ff;--green:#00e676;--red:#ff4444;--yellow:#ffd700;
-  --card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);
-  --muted:#3a5a7a;--text:#ddeeff;
+--blue:#1e90ff;--green:#00e676;--red:#ff4444;--yellow:#ffd700;
+--card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);
+--muted:#3a5a7a;--text:#ddeeff;
 }
-
-/* HEADER */
 .header{background:linear-gradient(180deg,#0a1628,#04080f);padding:14px 16px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .logo{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;color:var(--blue)}
 .liga-selector{display:flex;gap:6px}
 .liga-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.2s}
 .liga-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
-
-/* TABS */
 .tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
 .tab{flex:1;padding:10px 4px;text-align:center;font-size:10px;font-weight:600;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;font-family:'Oswald',sans-serif}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-
-/* MAIN */
 .main{padding:14px 12px 80px}
 .section{display:none}
 .section.active{display:block}
-
-/* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px}
 .card-title{font-size:9px;letter-spacing:2px;color:var(--muted);font-family:'Oswald',sans-serif;margin-bottom:10px}
-
-/* SELECTS */
 .select-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .select-wrap{display:flex;flex-direction:column;gap:4px}
 .select-wrap label{font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Oswald',sans-serif}
 select{width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;appearance:none;cursor:pointer}
 select:focus{outline:none;border-color:var(--blue)}
-
-/* TEAM INFO */
 .team-info{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Oswald',sans-serif;letter-spacing:.5px}
-
-/* PROBABILIDADES */
 .prob-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .prob-item{flex:1;text-align:center;padding:10px 6px;background:rgba(255,255,255,.03);border-radius:8px;margin:0 3px}
 .prob-label{font-size:8px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:4px}
@@ -56,314 +41,273 @@ select:focus{outline:none;border-color:var(--blue)}
 .prob-cuota{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Barlow',sans-serif}
 .bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:6px}
 .bar-fill{height:100%;border-radius:3px;transition:width .6s}
-
-/* GOLES */
 .goles-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
 .gol-item{background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
 .gol-label{font-size:10px;color:var(--text)}
 .gol-val{font-size:14px;font-weight:700;font-family:'Oswald',sans-serif}
 .gol-check{font-size:10px;margin-left:4px}
-
-/* CERTEZA */
 .certeza-card{background:var(--card);border-radius:10px;padding:10px 13px;margin-bottom:12px}
 .certeza-num{font-size:28px;font-weight:700;font-family:'Oswald',sans-serif}
 .certeza-label{font-size:9px;letter-spacing:1px;font-family:'Oswald',sans-serif;margin-top:1px}
 .certeza-desc{font-size:9px;color:var(--muted);font-family:'Barlow',sans-serif;margin-top:2px}
-
-/* MARCADOR */
 .marcador-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .mini-card{background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;text-align:center}
 .mini-label{font-size:8px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:4px}
 .mini-val{font-size:20px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--green)}
 .mini-sub{font-size:8px;color:var(--muted);margin-top:2px}
-
-/* BTN */
 .btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#1565c0,var(--blue));color:#fff;font-size:13px;font-weight:600;font-family:'Oswald',sans-serif;letter-spacing:1px;cursor:pointer;transition:.2s;margin-top:8px}
 .btn:hover{opacity:.9}
 .btn:active{transform:scale(.98)}
 .btn-secondary{background:rgba(255,255,255,.06);border:1px solid var(--border)}
-
-/* CLASIFICACION */
 .clas-table{width:100%;border-collapse:collapse}
 .clas-table th{font-size:8px;letter-spacing:1px;color:var(--muted);font-family:'Oswald',sans-serif;padding:6px 4px;text-align:center;border-bottom:1px solid var(--border)}
 .clas-table td{font-size:11px;padding:8px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.04)}
 .clas-table td:first-child{text-align:left;font-weight:600}
 .pos-badge{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-right:4px;font-family:'Oswald',sans-serif}
-
-/* TOP 3 */
 .top3-item{background:rgba(255,255,255,.03);border-radius:8px;padding:10px 12px;margin-bottom:6px;border-left:3px solid var(--green)}
 .top3-partido{font-size:11px;font-weight:600;margin-bottom:4px}
 .top3-mercado{font-size:10px;color:var(--blue)}
 .top3-stats{display:flex;gap:10px;margin-top:4px;font-size:9px;color:var(--muted)}
-
-/* IA OUTPUT */
 .ia-output{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:10px;font-size:12px;line-height:1.7;white-space:pre-wrap;display:none}
-
-/* LOADING */
 .loading{text-align:center;padding:20px;color:var(--muted);font-size:11px;display:none}
 .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* NOTICIAS */
 .noticias-badge{display:inline-block;font-size:9px;padding:3px 8px;border-radius:20px;background:rgba(255,100,0,.15);color:#ff7043;border:1px solid rgba(255,100,0,.3);margin-bottom:8px;font-family:'Oswald',sans-serif;letter-spacing:1px}
 .noticias-text{font-size:10px;color:var(--muted);line-height:1.5;font-family:'Barlow',sans-serif}
 .baja-item{font-size:10px;padding:2px 0;color:#ff7043}
-
-/* COMBINADA */
 .combinada-list{margin-bottom:10px}
 .combinada-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px}
 .combinada-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px}
 .combinada-result{background:rgba(30,144,255,.08);border:1px solid rgba(30,144,255,.2);border-radius:8px;padding:10px 12px;margin-top:8px}
-
-/* RESPONSIVE */
 @media(max-width:360px){
-  .prob-value{font-size:18px}
-  .goles-grid{grid-template-columns:1fr}
+.prob-value{font-size:18px}
+.goles-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-
 <div class="header">
-  <div class="header-top">
-    <div class="logo">⚽ PREDICTOR</div>
-    <div class="liga-selector">
-      <button class="liga-btn active" onclick="setLiga('laliga')" id="btn-laliga">LALIGA</button>
-      <button class="liga-btn" onclick="setLiga('segunda')" id="btn-segunda">2ª DIV</button>
-    </div>
-  </div>
-  <div class="tabs">
-    <div class="tab active" onclick="showTab('partido')" id="tab-partido">⚔️ PARTIDO</div>
-    <div class="tab" onclick="showTab('goles')" id="tab-goles">⚽ GOLES</div>
-    <div class="tab" onclick="showTab('clasificacion')" id="tab-clasificacion">📊 TABLA</div>
-    <div class="tab" onclick="showTab('top3')" id="tab-top3">🎯 TOP 3</div>
-    <div class="tab" onclick="showTab('combinada')" id="tab-combinada">🔗 COMBO</div>
-  </div>
+<div class="header-top">
+<div class="logo">⚽ PREDICTOR</div>
+<div class="liga-selector">
+<button class="liga-btn active" onclick="setLiga('laliga')" id="btn-laliga">LALIGA</button>
+<button class="liga-btn" onclick="setLiga('segunda')" id="btn-segunda">2ª DIV</button>
 </div>
-
+</div>
+<div class="tabs">
+<div class="tab active" onclick="showTab('partido')" id="tab-partido">⚔️ PARTIDO</div>
+<div class="tab" onclick="showTab('goles')" id="tab-goles">⚽ GOLES</div>
+<div class="tab" onclick="showTab('clasificacion')" id="tab-clasificacion">📊 TABLA</div>
+<div class="tab" onclick="showTab('top3')" id="tab-top3">🎯 TOP 3</div>
+<div class="tab" onclick="showTab('combinada')" id="tab-combinada">🔗 COMBO</div>
+</div>
+</div>
 <div class="main">
-
 <!-- PARTIDO -->
 <div class="section active" id="section-partido">
-  <div class="select-row">
-    <div class="select-wrap">
-      <label>LOCAL</label>
-      <select id="sel-local" onchange="onSelectChange()"></select>
-      <div class="team-info" id="info-local"></div>
-    </div>
-    <div class="select-wrap">
-      <label>VISITANTE</label>
-      <select id="sel-visit" onchange="onSelectChange()"></select>
-      <div class="team-info" id="info-visit"></div>
-    </div>
-  </div>
-
-  <!-- Noticias -->
-  <div id="noticias-wrap" style="display:none" class="card">
-    <div class="card-title">🔍 NOTICIAS · BAJAS</div>
-    <div id="noticias-content"></div>
-  </div>
-
-  <!-- Certeza -->
-  <div id="certeza-wrap" style="display:none">
-    <div class="certeza-card" id="certeza-card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Oswald',sans-serif;margin-bottom:3px">ÍNDICE DE CERTEZA</div>
-          <div class="certeza-num" id="certeza-num">--</div>
-          <div class="certeza-label" id="certeza-label">--</div>
-        </div>
-        <div style="text-align:right">
-          <div class="certeza-desc" id="certeza-desc">--</div>
-          <div style="font-size:8px;color:var(--muted);margin-top:4px" id="certeza-sub">--</div>
-        </div>
-      </div>
-      <div class="bar" style="margin-top:8px"><div class="bar-fill" id="certeza-bar" style="width:0%"></div></div>
-    </div>
-  </div>
-
-  <!-- Resultado -->
-  <div id="resultado-wrap" style="display:none" class="card">
-    <div class="card-title">RESULTADO</div>
-    <div class="prob-row">
-      <div class="prob-item">
-        <div class="prob-label" id="lbl-local">LOCAL</div>
-        <div class="prob-value" id="p1" style="color:var(--blue)">--%</div>
-        <div class="prob-cuota" id="q1">--</div>
-        <div class="bar"><div class="bar-fill" id="bar1" style="background:var(--blue);width:0%"></div></div>
-      </div>
-      <div class="prob-item">
-        <div class="prob-label">EMPATE</div>
-        <div class="prob-value" id="pe" style="color:var(--yellow)">--%</div>
-        <div class="prob-cuota" id="qe">--</div>
-        <div class="bar"><div class="bar-fill" id="bare" style="background:var(--yellow);width:0%"></div></div>
-      </div>
-      <div class="prob-item">
-        <div class="prob-label" id="lbl-visit">VISIT</div>
-        <div class="prob-value" id="p2" style="color:var(--red)">--%</div>
-        <div class="prob-cuota" id="q2">--</div>
-        <div class="bar"><div class="bar-fill" id="bar2" style="background:var(--red);width:0%"></div></div>
-      </div>
-    </div>
-
-    <div class="marcador-wrap">
-      <div class="mini-card">
-        <div class="mini-label">GOLES ESPERADOS</div>
-        <div class="mini-val" id="lambdas" style="font-size:16px;color:var(--blue)">-- · --</div>
-        <div class="mini-sub" id="lambda-range">--</div>
-      </div>
-      <div class="mini-card">
-        <div class="mini-label">MARCADOR PROB.</div>
-        <div class="mini-val" id="marcador">--</div>
-        <div class="mini-sub" id="marcador-pct">--</div>
-      </div>
-    </div>
-
-    <button class="btn" onclick="analizarIA()">🤖 ANÁLISIS IA</button>
-    <div class="loading" id="loading-ia"><div class="spinner"></div>Analizando...</div>
-    <div class="ia-output" id="ia-output"></div>
-  </div>
+<div class="select-row">
+<div class="select-wrap">
+<label>LOCAL</label>
+<select id="sel-local" onchange="onSelectChange()"></select>
+<div class="team-info" id="info-local"></div>
 </div>
-
+<div class="select-wrap">
+<label>VISITANTE</label>
+<select id="sel-visit" onchange="onSelectChange()"></select>
+<div class="team-info" id="info-visit"></div>
+</div>
+</div>
+<div id="noticias-wrap" style="display:none" class="card">
+<div class="card-title">🔍 NOTICIAS · BAJAS</div>
+<div id="noticias-content"></div>
+</div>
+<div id="certeza-wrap" style="display:none">
+<div class="certeza-card" id="certeza-card">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div>
+<div style="font-size:9px;color:var(--muted);letter-spacing:2px;font-family:'Oswald',sans-serif;margin-bottom:3px">ÍNDICE DE CERTEZA</div>
+<div class="certeza-num" id="certeza-num">--</div>
+<div class="certeza-label" id="certeza-label">--</div>
+</div>
+<div style="text-align:right">
+<div class="certeza-desc" id="certeza-desc">--</div>
+<div style="font-size:8px;color:var(--muted);margin-top:4px" id="certeza-sub">--</div>
+</div>
+</div>
+<div class="bar" style="margin-top:8px"><div class="bar-fill" id="certeza-bar" style="width:0%"></div></div>
+</div>
+</div>
+<div id="resultado-wrap" style="display:none" class="card">
+<div class="card-title">RESULTADO</div>
+<div class="prob-row">
+<div class="prob-item">
+<div class="prob-label" id="lbl-local">LOCAL</div>
+<div class="prob-value" id="p1" style="color:var(--blue)">--%</div>
+<div class="prob-cuota" id="q1">--</div>
+<div class="bar"><div class="bar-fill" id="bar1" style="background:var(--blue);width:0%"></div></div>
+</div>
+<div class="prob-item">
+<div class="prob-label">EMPATE</div>
+<div class="prob-value" id="pe" style="color:var(--yellow)">--%</div>
+<div class="prob-cuota" id="qe">--</div>
+<div class="bar"><div class="bar-fill" id="bare" style="background:var(--yellow);width:0%"></div></div>
+</div>
+<div class="prob-item">
+<div class="prob-label" id="lbl-visit">VISIT</div>
+<div class="prob-value" id="p2" style="color:var(--red)">--%</div>
+<div class="prob-cuota" id="q2">--</div>
+<div class="bar"><div class="bar-fill" id="bar2" style="background:var(--red);width:0%"></div></div>
+</div>
+</div>
+<div class="marcador-wrap">
+<div class="mini-card">
+<div class="mini-label">GOLES ESPERADOS</div>
+<div class="mini-val" id="lambdas" style="font-size:16px;color:var(--blue)">-- · --</div>
+<div class="mini-sub" id="lambda-range">--</div>
+</div>
+<div class="mini-card">
+<div class="mini-label">MARCADOR PROB.</div>
+<div class="mini-val" id="marcador">--</div>
+<div class="mini-sub" id="marcador-pct">--</div>
+</div>
+</div>
+<button class="btn" onclick="analizarIA()">🤖 ANÁLISIS IA</button>
+<div class="loading" id="loading-ia"><div class="spinner"></div>Analizando...</div>
+<div class="ia-output" id="ia-output"></div>
+</div>
+</div>
 <!-- GOLES -->
 <div class="section" id="section-goles">
-  <div class="card">
-    <div class="card-title">OVER / UNDER</div>
-    <div id="ou-list"></div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <div class="card">
-      <div class="card-title">1ª MITAD</div>
-      <div id="mitad1-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">2ª MITAD</div>
-      <div id="mitad2-list"></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">AMBOS ANOTAN · HANDICAP</div>
-    <div id="btts-list"></div>
-  </div>
+<div class="card">
+<div class="card-title">OVER / UNDER</div>
+<div id="ou-list"></div>
 </div>
-
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+<div class="card">
+<div class="card-title">1ª MITAD</div>
+<div id="mitad1-list"></div>
+</div>
+<div class="card">
+<div class="card-title">2ª MITAD</div>
+<div id="mitad2-list"></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">AMBOS ANOTAN · HANDICAP</div>
+<div id="btts-list"></div>
+</div>
+</div>
 <!-- CLASIFICACION -->
 <div class="section" id="section-clasificacion">
-  <div class="card">
-    <div class="card-title" id="clas-title">CLASIFICACIÓN LALIGA 26/27</div>
-    <table class="clas-table">
-      <thead><tr>
-        <th style="text-align:left">EQUIPO</th>
-        <th>ELO</th>
-        <th>ATK</th>
-        <th>DEF</th>
-        <th>xG</th>
-      </tr></thead>
-      <tbody id="clas-body"></tbody>
-    </table>
-  </div>
+<div class="card">
+<div class="card-title" id="clas-title">CLASIFICACIÓN LALIGA 26/27</div>
+<table class="clas-table">
+<thead><tr>
+<th style="text-align:left">EQUIPO</th>
+<th>ELO</th>
+<th>ATK</th>
+<th>DEF</th>
+<th>xG</th>
+</tr></thead>
+<tbody id="clas-body"></tbody>
+</table>
 </div>
-
+</div>
 <!-- TOP 3 -->
 <div class="section" id="section-top3">
-  <div class="card">
-    <div class="card-title">🎯 TOP 3 APUESTAS · JORNADA</div>
-    <div id="top3-list">
-      <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">
-        Selecciona un partido en ⚔️ PARTIDO para calcular las mejores apuestas
-      </div>
-    </div>
-  </div>
+<div class="card">
+<div class="card-title">🎯 TOP 3 APUESTAS · JORNADA</div>
+<div id="top3-list">
+<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">
+Selecciona un partido en ⚔️ PARTIDO para calcular las mejores apuestas
 </div>
-
+</div>
+</div>
+</div>
 <!-- COMBINADA -->
 <div class="section" id="section-combinada">
-  <div class="card">
-    <div class="card-title">🔗 COMBINADA</div>
-    <div class="select-row">
-      <div class="select-wrap">
-        <label>LOCAL</label>
-        <select id="combo-local" onchange="comboChange()"></select>
-      </div>
-      <div class="select-wrap">
-        <label>VISITANTE</label>
-        <select id="combo-visit" onchange="comboChange()"></select>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('1')">+ LOCAL</button>
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('X')">+ EMPATE</button>
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('2')">+ VISIT</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('over15')">+ Over 1.5</button>
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('over25')">+ Over 2.5</button>
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('under25')">+ Under 2.5</button>
-      <button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('btts')">+ BTTS Sí</button>
-    </div>
-    <div class="combinada-list" id="combo-list"></div>
-    <div class="combinada-result" id="combo-result" style="display:none"></div>
-    <button class="btn" onclick="analizarCombo()">🤖 ANÁLISIS COMBINADA</button>
-    <div class="loading" id="loading-combo"><div class="spinner"></div>Analizando...</div>
-    <div class="ia-output" id="combo-output"></div>
-  </div>
+<div class="card">
+<div class="card-title">🔗 COMBINADA</div>
+<div class="select-row">
+<div class="select-wrap">
+<label>LOCAL</label>
+<select id="combo-local" onchange="comboChange()"></select>
 </div>
-
+<div class="select-wrap">
+<label>VISITANTE</label>
+<select id="combo-visit" onchange="comboChange()"></select>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+<button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('1')">+ LOCAL</button>
+<button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('X')">+ EMPATE</button>
+<button class="btn btn-secondary" style="font-size:10px" onclick="addCombo('2')">+ VISIT</button>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+<button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('over15')">+ Over 1.5</button>
+<button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('over25')">+ Over 2.5</button>
+<button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('under25')">+ Under 2.5</button>
+<button class="btn btn-secondary" style="font-size:10px" onclick="addComboGol('btts')">+ BTTS Sí</button>
+</div>
+<div class="combinada-list" id="combo-list"></div>
+<div class="combinada-result" id="combo-result" style="display:none"></div>
+<button class="btn" onclick="analizarCombo()">🤖 ANÁLISIS COMBINADA</button>
+<div class="loading" id="loading-combo"><div class="spinner"></div>Analizando...</div>
+<div class="ia-output" id="combo-output"></div>
+</div>
+</div>
 </div><!-- /main -->
-
 <script>
 // ═══════════════════════════════════════════════════════
 // DATOS BASE — 20 EQUIPOS LALIGA 26/27
 // ═══════════════════════════════════════════════════════
 const EQUIPOS_LALIGA = {
-  "Real Madrid":      {elo:2105,atk:1.92,def:0.72,forma:0.88,fw:0.90,ciudad:"Madrid"},
-  "Barcelona":        {elo:2088,atk:1.88,def:0.78,forma:0.86,fw:0.88,ciudad:"Barcelona"},
-  "Atlético Madrid":  {elo:1998,atk:1.42,def:0.65,forma:0.78,fw:0.80,ciudad:"Madrid"},
-  "Athletic Bilbao":  {elo:1892,atk:1.38,def:0.95,forma:0.72,fw:0.74,ciudad:"Bilbao"},
-  "Real Sociedad":    {elo:1875,atk:1.32,def:0.98,forma:0.70,fw:0.71,ciudad:"San Sebastián"},
-  "Villarreal":       {elo:1858,atk:1.35,def:1.02,forma:0.68,fw:0.70,ciudad:"Villarreal"},
-  "Betis":            {elo:1845,atk:1.30,def:1.05,forma:0.67,fw:0.68,ciudad:"Sevilla"},
-  "Sevilla":          {elo:1838,atk:1.28,def:1.08,forma:0.65,fw:0.66,ciudad:"Sevilla"},
-  "Celta Vigo":       {elo:1798,atk:1.25,def:1.15,forma:0.62,fw:0.63,ciudad:"Vigo"},
-  "Getafe":           {elo:1775,atk:0.98,def:0.92,forma:0.58,fw:0.59,ciudad:"Getafe"},
-  "Osasuna":          {elo:1768,atk:1.10,def:1.05,forma:0.60,fw:0.61,ciudad:"Pamplona"},
-  "Girona":           {elo:1762,atk:1.35,def:1.12,forma:0.62,fw:0.63,ciudad:"Girona"},
-  "Rayo Vallecano":   {elo:1748,atk:1.05,def:1.10,forma:0.58,fw:0.59,ciudad:"Madrid"},
-  "Mallorca":         {elo:1742,atk:0.95,def:1.02,forma:0.57,fw:0.58,ciudad:"Palma"},
-  "Alavés":           {elo:1722,atk:0.98,def:1.18,forma:0.55,fw:0.56,ciudad:"Vitoria"},
-  "Valladolid":       {elo:1712,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Valladolid"},
-  "Leganés":          {elo:1705,atk:0.88,def:1.20,forma:0.52,fw:0.53,ciudad:"Leganés"},
-  "Las Palmas":       {elo:1718,atk:1.05,def:1.25,forma:0.54,fw:0.55,ciudad:"Las Palmas"},
-  "Espanyol":         {elo:1725,atk:1.02,def:1.18,forma:0.55,fw:0.56,ciudad:"Barcelona"},
-  "Valencia":         {elo:1758,atk:1.12,def:1.10,forma:0.60,fw:0.61,ciudad:"Valencia"},
+"Real Madrid": {elo:2105,atk:1.92,def:0.72,forma:0.88,fw:0.90,ciudad:"Madrid",disp:1.15},
+"Barcelona": {elo:2088,atk:1.88,def:0.78,forma:0.86,fw:0.88,ciudad:"Barcelona",disp:1.18},
+"Atlético Madrid": {elo:1998,atk:1.42,def:0.65,forma:0.78,fw:0.80,ciudad:"Madrid",disp:1.3},
+"Athletic Bilbao": {elo:1892,atk:1.38,def:0.95,forma:0.72,fw:0.74,ciudad:"Bilbao",disp:1.2},
+"Real Sociedad": {elo:1875,atk:1.32,def:0.98,forma:0.70,fw:0.71,ciudad:"San Sebastián",disp:1.25},
+"Villarreal": {elo:1858,atk:1.35,def:1.02,forma:0.68,fw:0.70,ciudad:"Villarreal",disp:1.35},
+"Betis": {elo:1845,atk:1.30,def:1.05,forma:0.67,fw:0.68,ciudad:"Sevilla",disp:1.3},
+"Sevilla": {elo:1838,atk:1.28,def:1.08,forma:0.65,fw:0.66,ciudad:"Sevilla",disp:1.35},
+"Celta Vigo": {elo:1798,atk:1.25,def:1.15,forma:0.62,fw:0.63,ciudad:"Vigo",disp:1.35},
+"Getafe": {elo:1775,atk:0.98,def:0.92,forma:0.58,fw:0.59,ciudad:"Getafe",disp:1.25},
+"Osasuna": {elo:1768,atk:1.10,def:1.05,forma:0.60,fw:0.61,ciudad:"Pamplona",disp:1.3},
+"Girona": {elo:1762,atk:1.35,def:1.12,forma:0.62,fw:0.63,ciudad:"Girona",disp:1.5},
+"Rayo Vallecano": {elo:1748,atk:1.05,def:1.10,forma:0.58,fw:0.59,ciudad:"Madrid",disp:1.35},
+"Mallorca": {elo:1742,atk:0.95,def:1.02,forma:0.57,fw:0.58,ciudad:"Palma",disp:1.3},
+"Alavés": {elo:1722,atk:0.98,def:1.18,forma:0.55,fw:0.56,ciudad:"Vitoria",disp:1.35},
+"Valladolid": {elo:1712,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Valladolid",disp:1.55},
+"Leganés": {elo:1705,atk:0.88,def:1.20,forma:0.52,fw:0.53,ciudad:"Leganés",disp:1.5},
+"Las Palmas": {elo:1718,atk:1.05,def:1.25,forma:0.54,fw:0.55,ciudad:"Las Palmas",disp:1.55},
+"Espanyol": {elo:1725,atk:1.02,def:1.18,forma:0.55,fw:0.56,ciudad:"Barcelona",disp:1.45},
+"Valencia": {elo:1758,atk:1.12,def:1.10,forma:0.60,fw:0.61,ciudad:"Valencia",disp:1.4},
 };
-
 // ═══════════════════════════════════════════════════════
 // DATOS BASE — 20 EQUIPOS SEGUNDA DIVISIÓN 26/27
 // ═══════════════════════════════════════════════════════
 const EQUIPOS_SEGUNDA = {
-  "Deportivo Coruña":   {elo:1698,atk:1.25,def:1.05,forma:0.65,fw:0.66,ciudad:"A Coruña"},
-  "Zaragoza":           {elo:1692,atk:1.18,def:1.10,forma:0.63,fw:0.64,ciudad:"Zaragoza"},
-  "Racing Santander":   {elo:1685,atk:1.15,def:1.12,forma:0.62,fw:0.63,ciudad:"Santander"},
-  "Sporting Gijón":     {elo:1678,atk:1.12,def:1.15,forma:0.61,fw:0.62,ciudad:"Gijón"},
-  "Oviedo":             {elo:1672,atk:1.10,def:1.08,forma:0.60,fw:0.61,ciudad:"Oviedo"},
-  "Mirandés":           {elo:1665,atk:1.05,def:1.10,forma:0.59,fw:0.60,ciudad:"Miranda de Ebro"},
-  "Eldense":            {elo:1645,atk:0.95,def:1.20,forma:0.55,fw:0.56,ciudad:"Elda"},
-  "Burgos":             {elo:1652,atk:1.00,def:1.15,forma:0.57,fw:0.58,ciudad:"Burgos"},
-  "Huesca":             {elo:1658,atk:1.08,def:1.12,forma:0.58,fw:0.59,ciudad:"Huesca"},
-  "Levante":            {elo:1675,atk:1.15,def:1.08,forma:0.62,fw:0.63,ciudad:"Valencia"},
-  "Almería":            {elo:1648,atk:1.02,def:1.18,forma:0.56,fw:0.57,ciudad:"Almería"},
-  "Córdoba":            {elo:1642,atk:0.98,def:1.20,forma:0.55,fw:0.56,ciudad:"Córdoba"},
-  "Ferrol":             {elo:1635,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Ferrol"},
-  "Tenerife":           {elo:1655,atk:1.05,def:1.15,forma:0.57,fw:0.58,ciudad:"Santa Cruz de Tenerife"},
-  "Cartagena":          {elo:1638,atk:0.95,def:1.18,forma:0.54,fw:0.55,ciudad:"Cartagena"},
-  "Castellón":          {elo:1630,atk:0.90,def:1.22,forma:0.52,fw:0.53,ciudad:"Castellón"},
-  "Numancia":           {elo:1625,atk:0.88,def:1.25,forma:0.51,fw:0.52,ciudad:"Soria"},
-  "Andorra":            {elo:1620,atk:0.85,def:1.28,forma:0.50,fw:0.51,ciudad:"Andorra"},
-  "Ibiza":              {elo:1618,atk:0.88,def:1.30,forma:0.50,fw:0.51,ciudad:"Ibiza"},
-  "Alcorcón":           {elo:1615,atk:0.85,def:1.32,forma:0.49,fw:0.50,ciudad:"Alcorcón"},
+"Deportivo Coruña": {elo:1698,atk:1.25,def:1.05,forma:0.65,fw:0.66,ciudad:"A Coruña",disp:1.3},
+"Zaragoza": {elo:1692,atk:1.18,def:1.10,forma:0.63,fw:0.64,ciudad:"Zaragoza",disp:1.35},
+"Racing Santander": {elo:1685,atk:1.15,def:1.12,forma:0.62,fw:0.63,ciudad:"Santander",disp:1.35},
+"Sporting Gijón": {elo:1678,atk:1.12,def:1.15,forma:0.61,fw:0.62,ciudad:"Gijón",disp:1.35},
+"Oviedo": {elo:1672,atk:1.10,def:1.08,forma:0.60,fw:0.61,ciudad:"Oviedo",disp:1.35},
+"Mirandés": {elo:1665,atk:1.05,def:1.10,forma:0.59,fw:0.60,ciudad:"Miranda de Ebro",disp:1.4},
+"Eldense": {elo:1645,atk:0.95,def:1.20,forma:0.55,fw:0.56,ciudad:"Elda",disp:1.55},
+"Burgos": {elo:1652,atk:1.00,def:1.15,forma:0.57,fw:0.58,ciudad:"Burgos",disp:1.45},
+"Huesca": {elo:1658,atk:1.08,def:1.12,forma:0.58,fw:0.59,ciudad:"Huesca",disp:1.4},
+"Levante": {elo:1675,atk:1.15,def:1.08,forma:0.62,fw:0.63,ciudad:"Valencia",disp:1.35},
+"Almería": {elo:1648,atk:1.02,def:1.18,forma:0.56,fw:0.57,ciudad:"Almería",disp:1.5},
+"Córdoba": {elo:1642,atk:0.98,def:1.20,forma:0.55,fw:0.56,ciudad:"Córdoba",disp:1.5},
+"Ferrol": {elo:1635,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Ferrol",disp:1.55},
+"Tenerife": {elo:1655,atk:1.05,def:1.15,forma:0.57,fw:0.58,ciudad:"Santa Cruz de Tenerife",disp:1.4},
+"Cartagena": {elo:1638,atk:0.95,def:1.18,forma:0.54,fw:0.55,ciudad:"Cartagena",disp:1.5},
+"Castellón": {elo:1630,atk:0.90,def:1.22,forma:0.52,fw:0.53,ciudad:"Castellón",disp:1.55},
+"Numancia": {elo:1625,atk:0.88,def:1.25,forma:0.51,fw:0.52,ciudad:"Soria",disp:1.55},
+"Andorra": {elo:1620,atk:0.85,def:1.28,forma:0.50,fw:0.51,ciudad:"Andorra",disp:1.6},
+"Ibiza": {elo:1618,atk:0.88,def:1.30,forma:0.50,fw:0.51,ciudad:"Ibiza",disp:1.6},
+"Alcorcón": {elo:1615,atk:0.85,def:1.32,forma:0.49,fw:0.50,ciudad:"Alcorcón",disp:1.6},
 };
-
 // ═══════════════════════════════════════════════════════
 // ESTADO
 // ═══════════════════════════════════════════════════════
@@ -373,448 +317,411 @@ let combos = [];
 let adjFactors = {f1:1.0,f2:1.0};
 let lastRes = null;
 let comboLastRes = null;
+// ═══════════════════════════════════════════════════════
+// MODELO DIXON-COLES + NEGATIVE BINOMIAL
+// ═══════════════════════════════════════════════════════
+// disp = ratio varianza/media de goles (φ) por equipo — PLACEHOLDER provisional.
+// φ=1 → Poisson puro (muy regular). φ>1 → sobre-dispersión (irregular).
+// Pendiente: calibrar con varianza histórica real de goles por equipo (API-Football).
+function rFromDisp(lambda,disp){
+if(!disp||disp<=1.001)return 9999; // casi Poisson
+return Math.max(1, lambda/(disp-1));
+}
 
-// ═══════════════════════════════════════════════════════
-// MODELO DIXON-COLES
-// ═══════════════════════════════════════════════════════
-function poisson(l,k){
-  if(l<=0)return k===0?1:0;
-  let p=Math.exp(-l);for(let i=1;i<=k;i++)p*=l/i;return Math.max(0,p);
+// log-gamma (Lanczos) para poder calcular combinatorios con r no entero
+function logGamma(x){
+const g=7;
+const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,
+771.32342877765313,-176.61502916214059,12.507343278686905,
+-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-logGamma(1-x);
+x-=1;let a=c[0];const t=x+g+0.5;
+for(let i=1;i<g+2;i++)a+=c[i]/(x+i);
+return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+}
+function negBinom(mean,k,r){
+// Parametrización media-dispersión: Var = mean + mean²/r
+if(mean<=0)return k===0?1:0;
+const p=r/(r+mean);
+const logP=logGamma(k+r)-logGamma(r)-logGamma(k+1)+r*Math.log(p)+k*Math.log(1-p);
+return Math.max(0,Math.exp(logP));
 }
 function tau(g1,g2,l1,l2,rho=-0.13){
-  if(g1===0&&g2===0)return 1-l1*l2*rho;
-  if(g1===0&&g2===1)return 1+l1*rho;
-  if(g1===1&&g2===0)return 1+l2*rho;
-  if(g1===1&&g2===1)return 1-rho;
-  return 1;
+if(g1===0&&g2===0)return 1-l1*l2*rho;
+if(g1===0&&g2===1)return 1+l1*rho;
+if(g1===1&&g2===0)return 1+l2*rho;
+if(g1===1&&g2===1)return 1-rho;
+return 1;
 }
-
 function calcular(local,visit,f1=1.0,f2=1.0){
-  const s1=EQUIPOS[local];
-  const s2=EQUIPOS[visit];
-  if(!s1||!s2)return null;
-
-  const eloDiff=s1.elo-s2.elo;
-  const eloP=1/(1+Math.pow(10,-eloDiff/400));
-
-  const forma1=s1.forma*0.40+s1.fw*0.60;
-  const forma2=s2.forma*0.40+s2.fw*0.60;
-
-  // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*1.1*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*f2);
-
-  let p1=0,pe=0,p2=0;
-  const marc=[];
-  for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
-    const p=poisson(l1,g1)*poisson(l2,g2)*tau(g1,g2,l1,l2);
-    if(g1>g2)p1+=p;else if(g1===g2)pe+=p;else p2+=p;
-    marc.push({g1,g2,p});
-  }
-  const tot=p1+pe+p2||1;
-  marc.sort((a,b)=>b.p-a.p);
-
-  // Over/Under
-  let ou05=0,ou15=0,ou25=0,ou35=0,ou45=0;
-  let btts=0;
-  for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
-    const p=poisson(l1,g1)*poisson(l2,g2)*tau(g1,g2,l1,l2)/tot;
-    const t=g1+g2;
-    if(t>0.5)ou05+=p;if(t>1.5)ou15+=p;if(t>2.5)ou25+=p;if(t>3.5)ou35+=p;if(t>4.5)ou45+=p;
-    if(g1>0&&g2>0)btts+=p;
-  }
-
-  // Mitades (aprox)
-  const l1h=l1*0.45,l2h=l2*0.45;
-  const l1s=l1*0.55,l2s=l2*0.55;
-  const ou05h=1-Math.exp(-(l1h+l2h));
-  const ou15h=1-Math.exp(-(l1h+l2h))*(1+(l1h+l2h));
-  const ou05s=1-Math.exp(-(l1s+l2s));
-  const ou15s=1-Math.exp(-(l1s+l2s))*(1+(l1s+l2s));
-
-  const conf=Math.min(95,Math.max(35,50+(eloDiff/22)));
-  const handi=parseFloat((l1-l2).toFixed(2));
-
-  return{
-    l1:parseFloat(l1.toFixed(2)),l2:parseFloat(l2.toFixed(2)),
-    p1:parseFloat((p1/tot*100).toFixed(1)),
-    pe:parseFloat((pe/tot*100).toFixed(1)),
-    p2:parseFloat((p2/tot*100).toFixed(1)),
-    marc:`${marc[0].g1}-${marc[0].g2}`,
-    marcP:parseFloat((marc[0].p/tot*100).toFixed(1)),
-    ou05,ou15,ou25,ou35,ou45,btts,
-    ou05h,ou15h,ou05s,ou15s,
-    conf:parseFloat(conf.toFixed(0)),
-    handi
-  };
+const s1=EQUIPOS[local];
+const s2=EQUIPOS[visit];
+if(!s1||!s2)return null;
+const eloDiff=s1.elo-s2.elo;
+const eloP=1/(1+Math.pow(10,-eloDiff/400));
+const forma1=s1.forma*0.40+s1.fw*0.60;
+const forma2=s2.forma*0.40+s2.fw*0.60;
+const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*1.1*f1);
+const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*f2);
+const r1=rFromDisp(l1,s1.disp);
+const r2=rFromDisp(l2,s2.disp);
+let p1=0,pe=0,p2=0;
+const marc=[];
+for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
+const p=negBinom(l1,g1,r1)*negBinom(l2,g2,r2)*tau(g1,g2,l1,l2);
+if(g1>g2)p1+=p;else if(g1===g2)pe+=p;else p2+=p;
+marc.push({g1,g2,p});
 }
-
+const tot=p1+pe+p2||1;
+marc.sort((a,b)=>b.p-a.p);
+let ou05=0,ou15=0,ou25=0,ou35=0,ou45=0;
+let btts=0;
+for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
+const p=negBinom(l1,g1,r1)*negBinom(l2,g2,r2)*tau(g1,g2,l1,l2)/tot;
+const t=g1+g2;
+if(t>0.5)ou05+=p;if(t>1.5)ou15+=p;if(t>2.5)ou25+=p;if(t>3.5)ou35+=p;if(t>4.5)ou45+=p;
+if(g1>0&&g2>0)btts+=p;
+}
+const l1h=l1*0.45,l2h=l2*0.45;
+const l1s=l1*0.55,l2s=l2*0.55;
+const ou05h=1-Math.exp(-(l1h+l2h));
+const ou15h=1-Math.exp(-(l1h+l2h))*(1+(l1h+l2h));
+const ou05s=1-Math.exp(-(l1s+l2s));
+const ou15s=1-Math.exp(-(l1s+l2s))*(1+(l1s+l2s));
+const conf=Math.min(95,Math.max(35,50+(eloDiff/22)));
+const handi=parseFloat((l1-l2).toFixed(2));
+return{
+l1:parseFloat(l1.toFixed(2)),l2:parseFloat(l2.toFixed(2)),
+p1:parseFloat((p1/tot*100).toFixed(1)),
+pe:parseFloat((pe/tot*100).toFixed(1)),
+p2:parseFloat((p2/tot*100).toFixed(1)),
+marc:`${marc[0].g1}-${marc[0].g2}`,
+marcP:parseFloat((marc[0].p/tot*100).toFixed(1)),
+ou05,ou15,ou25,ou35,ou45,btts,
+ou05h,ou15h,ou05s,ou15s,
+conf:parseFloat(conf.toFixed(0)),
+handi
+};
+}
 // ═══════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════
 function q(p){return p>0?(100/p).toFixed(2):'--'}
 function pct(v){return (v*100).toFixed(1)+'%'}
 function icon(v,th1=0.65,th2=0.55){
-  if(v>=th1)return'✅';if(v>=th2)return'👍';return'';
+if(v>=th1)return'✅';if(v>=th2)return'👍';return'';
 }
-
 function fillSelects(){
-  const equipos=Object.keys(EQUIPOS).sort();
-  ['sel-local','sel-visit','combo-local','combo-visit'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    const prev=el.value;
-    el.innerHTML=equipos.map(e=>`<option value="${e}">${e}</option>`).join('');
-    if(prev&&equipos.includes(prev))el.value=prev;
-    else el.value=equipos[0];
-  });
-  // Visitante diferente al local
-  const loc=document.getElementById('sel-local').value;
-  const vis=document.getElementById('sel-visit');
-  if(vis.value===loc)vis.value=Object.keys(EQUIPOS).find(e=>e!==loc);
-  onSelectChange();
+const equipos=Object.keys(EQUIPOS).sort();
+['sel-local','sel-visit','combo-local','combo-visit'].forEach(id=>{
+const el=document.getElementById(id);
+if(!el)return;
+const prev=el.value;
+el.innerHTML=equipos.map(e=>`<option value="${e}">${e}</option>`).join('');
+if(prev&&equipos.includes(prev))el.value=prev;
+else el.value=equipos[0];
+});
+const loc=document.getElementById('sel-local').value;
+const vis=document.getElementById('sel-visit');
+if(vis.value===loc)vis.value=Object.keys(EQUIPOS).find(e=>e!==loc);
+onSelectChange();
 }
-
 function fillClasificacion(){
-  const body=document.getElementById('clas-body');
-  const equipos=Object.entries(EQUIPOS).sort((a,b)=>b[1].elo-a[1].elo);
-  const colors=['#ffd700','#c0c0c0','#cd7f32'];
-  body.innerHTML=equipos.map(([nombre,d],i)=>{
-    const col=i<3?colors[i]:i<4?'#1e90ff':i>=17?'#ff4444':'var(--muted)';
-    return`<tr>
-      <td><span class="pos-badge" style="background:${col}20;color:${col}">${i+1}</span>${nombre}</td>
-      <td style="color:var(--blue)">${d.elo}</td>
-      <td style="color:var(--green)">${d.atk.toFixed(2)}</td>
-      <td style="color:var(--red)">${d.def.toFixed(2)}</td>
-      <td>${((d.atk+d.def)/2).toFixed(2)}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('clas-title').textContent=`CLASIFICACIÓN ${LIGA==='laliga'?'LALIGA':'2ª DIVISIÓN'} 26/27`;
+const body=document.getElementById('clas-body');
+const equipos=Object.entries(EQUIPOS).sort((a,b)=>b[1].elo-a[1].elo);
+const colors=['#ffd700','#c0c0c0','#cd7f32'];
+body.innerHTML=equipos.map(([nombre,d],i)=>{
+const col=i<3?colors[i]:i<4?'#1e90ff':i>=17?'#ff4444':'var(--muted)';
+return`<tr>
+<td><span class="pos-badge" style="background:${col}20;color:${col}">${i+1}</span>${nombre}</td>
+<td style="color:var(--blue)">${d.elo}</td>
+<td style="color:var(--green)">${d.atk.toFixed(2)}</td>
+<td style="color:var(--red)">${d.def.toFixed(2)}</td>
+<td>${((d.atk+d.def)/2).toFixed(2)}</td>
+</tr>`;
+}).join('');
+document.getElementById('clas-title').textContent=`CLASIFICACIÓN ${LIGA==='laliga'?'LALIGA':'2ª DIVISIÓN'} 26/27`;
 }
-
 function setLiga(liga){
-  LIGA=liga;
-  EQUIPOS=liga==='laliga'?EQUIPOS_LALIGA:EQUIPOS_SEGUNDA;
-  document.getElementById('btn-laliga').className='liga-btn'+(liga==='laliga'?' active':'');
-  document.getElementById('btn-segunda').className='liga-btn'+(liga==='segunda'?' active':'');
-  fillSelects();
-  fillClasificacion();
-  combos=[];renderCombos();
+LIGA=liga;
+EQUIPOS=liga==='laliga'?EQUIPOS_LALIGA:EQUIPOS_SEGUNDA;
+document.getElementById('btn-laliga').className='liga-btn'+(liga==='laliga'?' active':'');
+document.getElementById('btn-segunda').className='liga-btn'+(liga==='segunda'?' active':'');
+fillSelects();
+fillClasificacion();
+combos=[];renderCombos();
 }
-
 function showTab(t){
-  document.querySelectorAll('.tab,.section').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  document.getElementById('section-'+t).classList.add('active');
+document.querySelectorAll('.tab,.section').forEach(el=>el.classList.remove('active'));
+document.getElementById('tab-'+t).classList.add('active');
+document.getElementById('section-'+t).classList.add('active');
 }
-
 // ═══════════════════════════════════════════════════════
 // SELECTOR CHANGE
 // ═══════════════════════════════════════════════════════
 function onSelectChange(){
-  const local=document.getElementById('sel-local').value;
-  const visit=document.getElementById('sel-visit').value;
-  if(!local||!visit||local===visit)return;
-
-  const s1=EQUIPOS[local],s2=EQUIPOS[visit];
-  document.getElementById('info-local').textContent=`ELO ${s1.elo} · ATK ${s1.atk} · DEF ${s1.def}`;
-  document.getElementById('info-visit').textContent=`ELO ${s2.elo} · ATK ${s2.atk} · DEF ${s2.def}`;
-
-  adjFactors={f1:1.0,f2:1.0};
-  buscarNoticias(local,visit);
+const local=document.getElementById('sel-local').value;
+const visit=document.getElementById('sel-visit').value;
+if(!local||!visit||local===visit)return;
+const s1=EQUIPOS[local],s2=EQUIPOS[visit];
+document.getElementById('info-local').textContent=`ELO ${s1.elo} · ATK ${s1.atk} · DEF ${s1.def}`;
+document.getElementById('info-visit').textContent=`ELO ${s2.elo} · ATK ${s2.atk} · DEF ${s2.def}`;
+adjFactors={f1:1.0,f2:1.0};
+buscarNoticias(local,visit);
 }
-
 // ═══════════════════════════════════════════════════════
 // NOTICIAS / BAJAS
 // ═══════════════════════════════════════════════════════
 async function buscarNoticias(eq1,eq2){
-  document.getElementById('noticias-wrap').style.display='none';
-  document.getElementById('certeza-wrap').style.display='none';
-  document.getElementById('resultado-wrap').style.display='none';
-
-  const wrap=document.getElementById('noticias-wrap');
-  const cont=document.getElementById('noticias-content');
-  wrap.style.display='block';
-  cont.innerHTML='<div style="color:var(--muted);font-size:10px">Buscando bajas...</div>';
-
-  try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',max_tokens:400,
-      system:'Analista fútbol LaLiga. Responde SOLO en JSON sin texto extra ni markdown.',
-      messages:[{role:'user',content:`Bajas, lesiones o sanciones conocidas de ${eq1} y ${eq2} para LaLiga 26/27. JSON:\n{"bajas1":["jugador(motivo)"],"bajas2":["jugador(motivo)"],"factor1":1.0,"factor2":1.0,"resumen":"1 línea"}\nfactor=multiplicador xG: 0.85=estrella baja, 0.90=importante, 0.95=moderada, 1.0=sin bajas. Arrays vacíos si no hay bajas conocidas.`}]
-    })});
-    const data=await r.json();
-    const txt=data.content?.map(c=>c.text||'').join('');
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const json=JSON.parse(clean);
-
-    adjFactors={f1:json.factor1||1.0,f2:json.factor2||1.0};
-    const ajustado=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
-
-    let html='';
-    if(ajustado)html+=`<div class="noticias-badge">⚠️ AJUSTADO</div>`;
-    if(json.bajas1?.length)html+=json.bajas1.map(b=>`<div class="baja-item">🔴 ${eq1}: ${b}</div>`).join('');
-    if(json.bajas2?.length)html+=json.bajas2.map(b=>`<div class="baja-item">🔴 ${eq2}: ${b}</div>`).join('');
-    if(json.resumen)html+=`<div class="noticias-text" style="margin-top:6px">${json.resumen}</div>`;
-    if(!ajustado&&!json.bajas1?.length&&!json.bajas2?.length)html='<div class="noticias-text">Sin bajas relevantes confirmadas</div>';
-
-    cont.innerHTML=html;
-  }catch(e){
-    cont.innerHTML='<div class="noticias-text">Sin datos de bajas disponibles</div>';
-  }
-
-  mostrarResultado();
+document.getElementById('noticias-wrap').style.display='none';
+document.getElementById('certeza-wrap').style.display='none';
+document.getElementById('resultado-wrap').style.display='none';
+const wrap=document.getElementById('noticias-wrap');
+const cont=document.getElementById('noticias-content');
+wrap.style.display='block';
+cont.innerHTML='<div style="color:var(--muted);font-size:10px">Buscando bajas...</div>';
+try{
+const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+model:'claude-haiku-4-5-20251001',max_tokens:400,
+system:'Analista fútbol LaLiga. Responde SOLO en JSON sin texto extra ni markdown.',
+messages:[{role:'user',content:`Bajas, lesiones o sanciones conocidas de ${eq1} y ${eq2} para LaLiga 26/27. JSON:\n{"bajas1":["jugador(motivo)"],"bajas2":["jugador(motivo)"],"factor1":1.0,"factor2":1.0,"resumen":"1 línea"}\nfactor=multiplicador xG: 0.85=estrella baja, 0.90=importante, 0.95=moderada, 1.0=sin bajas. Arrays vacíos si no hay bajas conocidas.`}]
+})});
+const data=await r.json();
+const txt=data.content?.map(c=>c.text||'').join('');
+const clean=txt.replace(/```json|```/g,'').trim();
+const json=JSON.parse(clean);
+adjFactors={f1:json.factor1||1.0,f2:json.factor2||1.0};
+const ajustado=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
+let html='';
+if(ajustado)html+=`<div class="noticias-badge">⚠️ AJUSTADO</div>`;
+if(json.bajas1?.length)html+=json.bajas1.map(b=>`<div class="baja-item">🔴 ${eq1}: ${b}</div>`).join('');
+if(json.bajas2?.length)html+=json.bajas2.map(b=>`<div class="baja-item">🔴 ${eq2}: ${b}</div>`).join('');
+if(json.resumen)html+=`<div class="noticias-text" style="margin-top:6px">${json.resumen}</div>`;
+if(!ajustado&&!json.bajas1?.length&&!json.bajas2?.length)html='<div class="noticias-text">Sin bajas relevantes confirmadas</div>';
+cont.innerHTML=html;
+}catch(e){
+cont.innerHTML='<div class="noticias-text">Sin datos de bajas disponibles</div>';
 }
-
+mostrarResultado();
+}
 // ═══════════════════════════════════════════════════════
 // MOSTRAR RESULTADO
 // ═══════════════════════════════════════════════════════
 function mostrarResultado(){
-  const local=document.getElementById('sel-local').value;
-  const visit=document.getElementById('sel-visit').value;
-  if(!local||!visit||local===visit)return;
-
-  const res=calcular(local,visit,adjFactors.f1,adjFactors.f2);
-  if(!res)return;
-  lastRes={local,visit,...res};
-
-  // Certeza
-  const conf=res.conf;
-  const hasBajas=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
-  const certeza=Math.round(conf*(hasBajas?0.92:1.0));
-  const sem=certeza>=75?{c:'var(--green)',l:'🟢 ALTA',d:'Apostar con convicción'}:
-            certeza>=55?{c:'var(--yellow)',l:'🟡 MEDIA',d:'Ser selectivo'}:
-            {c:'var(--red)',l:'🔴 BAJA',d:'Evitar o reducir stake'};
-
-  document.getElementById('certeza-num').textContent=certeza;
-  document.getElementById('certeza-num').style.color=sem.c;
-  document.getElementById('certeza-label').textContent=sem.l;
-  document.getElementById('certeza-label').style.color=sem.c;
-  document.getElementById('certeza-desc').textContent=sem.d;
-  document.getElementById('certeza-sub').textContent=`Confianza: ${conf}% · ${hasBajas?'⚠️ Bajas activas':'Sin alertas'}`;
-  document.getElementById('certeza-bar').style.width=certeza+'%';
-  document.getElementById('certeza-bar').style.background=sem.c;
-  document.getElementById('certeza-card').style.borderColor=sem.c+'40';
-  document.getElementById('certeza-wrap').style.display='block';
-
-  // Resultado
-  document.getElementById('lbl-local').textContent=local.split(' ').pop().toUpperCase();
-  document.getElementById('lbl-visit').textContent=visit.split(' ').pop().toUpperCase();
-  document.getElementById('p1').textContent=res.p1+'%';
-  document.getElementById('pe').textContent=res.pe+'%';
-  document.getElementById('p2').textContent=res.p2+'%';
-  document.getElementById('q1').textContent='cuota: '+q(res.p1);
-  document.getElementById('qe').textContent='cuota: '+q(res.pe);
-  document.getElementById('q2').textContent='cuota: '+q(res.p2);
-  document.getElementById('bar1').style.width=res.p1+'%';
-  document.getElementById('bare').style.width=res.pe+'%';
-  document.getElementById('bar2').style.width=res.p2+'%';
-  document.getElementById('lambdas').textContent=`${res.l1} · ${res.l2}`;
-  document.getElementById('lambda-range').textContent=`0.0-${(res.l1*2).toFixed(1)} · 0.0-${(res.l2*2).toFixed(1)}`;
-  document.getElementById('marcador').textContent=res.marc;
-  document.getElementById('marcador-pct').textContent=res.marcP+'%';
-  document.getElementById('resultado-wrap').style.display='block';
-  document.getElementById('ia-output').style.display='none';
-  document.getElementById('ia-output').textContent='';
-
-  // Goles
-  const ouList=document.getElementById('ou-list');
-  const items=[
-    {l:'Over 0.5',v:res.ou05},{l:'Under 0.5',v:1-res.ou05},
-    {l:'Over 1.5',v:res.ou15},{l:'Under 1.5',v:1-res.ou15},
-    {l:'Over 2.5',v:res.ou25},{l:'Under 2.5',v:1-res.ou25},
-    {l:'Over 3.5',v:res.ou35},{l:'Under 3.5',v:1-res.ou35},
-    {l:'Over 4.5',v:res.ou45},{l:'Under 4.5',v:1-res.ou45},
-  ];
-  ouList.innerHTML=items.map(({l,v})=>{
-    const c=l.startsWith('Over')?'var(--red)':'var(--green)';
-    const ic=icon(v);
-    return`<div class="gol-item">
-      <span class="gol-label" style="color:${c}">${l}</span>
-      <span><span class="gol-val" style="color:${v>=0.65?'var(--green)':v>=0.55?'var(--yellow)':'var(--muted)'}">${pct(v)}</span>
-      <span class="gol-check">${ic}</span>
-      <span style="font-size:9px;color:var(--muted);margin-left:6px">cuota: ${q(v*100)}</span></span>
-    </div>`;
-  }).join('');
-
-  document.getElementById('mitad1-list').innerHTML=`
-    <div class="gol-item"><span class="gol-label">O 0.5</span><span class="gol-val" style="color:var(--yellow)">${pct(res.ou05h)} ${icon(res.ou05h)}</span></div>
-    <div class="gol-item"><span class="gol-label">O 1.5</span><span class="gol-val" style="color:var(--muted)">${pct(res.ou15h)}</span></div>`;
-  document.getElementById('mitad2-list').innerHTML=`
-    <div class="gol-item"><span class="gol-label">O 0.5</span><span class="gol-val" style="color:var(--green)">${pct(res.ou05s)} ${icon(res.ou05s)}</span></div>
-    <div class="gol-item"><span class="gol-label">O 1.5</span><span class="gol-val" style="color:var(--muted)">${pct(res.ou15s)}</span></div>`;
-
-  const bttsNo=1-res.btts;
-  document.getElementById('btts-list').innerHTML=`
-    <div class="gol-item"><span class="gol-label">BTTS Sí</span><span><span class="gol-val" style="color:var(--yellow)">${pct(res.btts)}</span> <span style="font-size:9px;color:var(--muted)">cuota: ${q(res.btts*100)}</span></span></div>
-    <div class="gol-item"><span class="gol-label">BTTS No</span><span><span class="gol-val" style="color:var(--green)">${pct(bttsNo)} ${icon(bttsNo)}</span> <span style="font-size:9px;color:var(--muted)">cuota: ${q(bttsNo*100)}</span></span></div>
-    <div class="gol-item"><span class="gol-label">Handicap</span><span class="gol-val" style="color:var(--blue)">${local.split(' ').pop()} ${res.handi>0?res.handi:'0'}</span></div>`;
-
-  // Top 3
-  calcTop3(local,visit,res,certeza);
+const local=document.getElementById('sel-local').value;
+const visit=document.getElementById('sel-visit').value;
+if(!local||!visit||local===visit)return;
+const res=calcular(local,visit,adjFactors.f1,adjFactors.f2);
+if(!res)return;
+lastRes={local,visit,...res};
+const conf=res.conf;
+const hasBajas=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
+const certeza=Math.round(conf*(hasBajas?0.92:1.0));
+const sem=certeza>=75?{c:'var(--green)',l:'🟢 ALTA',d:'Apostar con convicción'}:
+certeza>=55?{c:'var(--yellow)',l:'🟡 MEDIA',d:'Ser selectivo'}:
+{c:'var(--red)',l:'🔴 BAJA',d:'Evitar o reducir stake'};
+document.getElementById('certeza-num').textContent=certeza;
+document.getElementById('certeza-num').style.color=sem.c;
+document.getElementById('certeza-label').textContent=sem.l;
+document.getElementById('certeza-label').style.color=sem.c;
+document.getElementById('certeza-desc').textContent=sem.d;
+document.getElementById('certeza-sub').textContent=`Confianza: ${conf}% · ${hasBajas?'⚠️ Bajas activas':'Sin alertas'}`;
+document.getElementById('certeza-bar').style.width=certeza+'%';
+document.getElementById('certeza-bar').style.background=sem.c;
+document.getElementById('certeza-card').style.borderColor=sem.c+'40';
+document.getElementById('certeza-wrap').style.display='block';
+document.getElementById('lbl-local').textContent=local.split(' ').pop().toUpperCase();
+document.getElementById('lbl-visit').textContent=visit.split(' ').pop().toUpperCase();
+document.getElementById('p1').textContent=res.p1+'%';
+document.getElementById('pe').textContent=res.pe+'%';
+document.getElementById('p2').textContent=res.p2+'%';
+document.getElementById('q1').textContent='cuota: '+q(res.p1);
+document.getElementById('qe').textContent='cuota: '+q(res.pe);
+document.getElementById('q2').textContent='cuota: '+q(res.p2);
+document.getElementById('bar1').style.width=res.p1+'%';
+document.getElementById('bare').style.width=res.pe+'%';
+document.getElementById('bar2').style.width=res.p2+'%';
+document.getElementById('lambdas').textContent=`${res.l1} · ${res.l2}`;
+document.getElementById('lambda-range').textContent=`0.0-${(res.l1*2).toFixed(1)} · 0.0-${(res.l2*2).toFixed(1)}`;
+document.getElementById('marcador').textContent=res.marc;
+document.getElementById('marcador-pct').textContent=res.marcP+'%';
+document.getElementById('resultado-wrap').style.display='block';
+document.getElementById('ia-output').style.display='none';
+document.getElementById('ia-output').textContent='';
+const ouList=document.getElementById('ou-list');
+const items=[
+{l:'Over 0.5',v:res.ou05},{l:'Under 0.5',v:1-res.ou05},
+{l:'Over 1.5',v:res.ou15},{l:'Under 1.5',v:1-res.ou15},
+{l:'Over 2.5',v:res.ou25},{l:'Under 2.5',v:1-res.ou25},
+{l:'Over 3.5',v:res.ou35},{l:'Under 3.5',v:1-res.ou35},
+{l:'Over 4.5',v:res.ou45},{l:'Under 4.5',v:1-res.ou45},
+];
+ouList.innerHTML=items.map(({l,v})=>{
+const c=l.startsWith('Over')?'var(--red)':'var(--green)';
+const ic=icon(v);
+return`<div class="gol-item">
+<span class="gol-label" style="color:${c}">${l}</span>
+<span><span class="gol-val" style="color:${v>=0.65?'var(--green)':v>=0.55?'var(--yellow)':'var(--muted)'}">${pct(v)}</span>
+<span class="gol-check">${ic}</span>
+<span style="font-size:9px;color:var(--muted);margin-left:6px">cuota: ${q(v*100)}</span></span>
+</div>`;
+}).join('');
+document.getElementById('mitad1-list').innerHTML=`
+<div class="gol-item"><span class="gol-label">O 0.5</span><span class="gol-val" style="color:var(--yellow)">${pct(res.ou05h)} ${icon(res.ou05h)}</span></div>
+<div class="gol-item"><span class="gol-label">O 1.5</span><span class="gol-val" style="color:var(--muted)">${pct(res.ou15h)}</span></div>`;
+document.getElementById('mitad2-list').innerHTML=`
+<div class="gol-item"><span class="gol-label">O 0.5</span><span class="gol-val" style="color:var(--green)">${pct(res.ou05s)} ${icon(res.ou05s)}</span></div>
+<div class="gol-item"><span class="gol-label">O 1.5</span><span class="gol-val" style="color:var(--muted)">${pct(res.ou15s)}</span></div>`;
+const bttsNo=1-res.btts;
+document.getElementById('btts-list').innerHTML=`
+<div class="gol-item"><span class="gol-label">BTTS Sí</span><span><span class="gol-val" style="color:var(--yellow)">${pct(res.btts)}</span> <span style="font-size:9px;color:var(--muted)">cuota: ${q(res.btts*100)}</span></span></div>
+<div class="gol-item"><span class="gol-label">BTTS No</span><span><span class="gol-val" style="color:var(--green)">${pct(bttsNo)} ${icon(bttsNo)}</span> <span style="font-size:9px;color:var(--muted)">cuota: ${q(bttsNo*100)}</span></span></div>
+<div class="gol-item"><span class="gol-label">Handicap</span><span class="gol-val" style="color:var(--blue)">${local.split(' ').pop()} ${res.handi>0?res.handi:'0'}</span></div>`;
+calcTop3(local,visit,res,certeza);
 }
-
 // ═══════════════════════════════════════════════════════
 // TOP 3 APUESTAS
 // ═══════════════════════════════════════════════════════
 function calcTop3(local,visit,res,certeza){
-  const apuestas=[
-    {label:`${local} gana`,prob:res.p1/100,cuota:parseFloat(q(res.p1)),mercado:'1X2'},
-    {label:'Empate',prob:res.pe/100,cuota:parseFloat(q(res.pe)),mercado:'1X2'},
-    {label:`${visit} gana`,prob:res.p2/100,cuota:parseFloat(q(res.p2)),mercado:'1X2'},
-    {label:'Over 1.5',prob:res.ou15,cuota:parseFloat(q(res.ou15*100)),mercado:'Goles'},
-    {label:'Over 2.5',prob:res.ou25,cuota:parseFloat(q(res.ou25*100)),mercado:'Goles'},
-    {label:'Under 2.5',prob:1-res.ou25,cuota:parseFloat(q((1-res.ou25)*100)),mercado:'Goles'},
-    {label:'BTTS Sí',prob:res.btts,cuota:parseFloat(q(res.btts*100)),mercado:'Goles'},
-    {label:'BTTS No',prob:1-res.btts,cuota:parseFloat(q((1-res.btts)*100)),mercado:'Goles'},
-  ];
-
-  // Filtrar por probabilidad mínima y ordenar por value estimado
-  const filtered=apuestas
-    .filter(a=>a.prob>=0.52&&a.cuota>=1.20)
-    .map(a=>({...a,value:parseFloat((a.prob*a.cuota-1).toFixed(3))}))
-    .sort((a,b)=>b.prob-a.prob)
-    .slice(0,3);
-
-  const list=document.getElementById('top3-list');
-  if(!filtered.length){
-    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">No hay apuestas claras para este partido</div>';
-    return;
-  }
-
-  list.innerHTML=filtered.map((a,i)=>`
-    <div class="top3-item" style="border-left-color:${i===0?'var(--green)':i===1?'var(--yellow)':'var(--blue)'}">
-      <div class="top3-partido">${local} vs ${visit}</div>
-      <div class="top3-mercado">${a.mercado} · ${a.label}</div>
-      <div class="top3-stats">
-        <span>Prob: <strong style="color:var(--green)">${pct(a.prob)}</strong></span>
-        <span>Cuota justa: <strong style="color:var(--blue)">${a.cuota}</strong></span>
-      </div>
-    </div>`).join('');
+const apuestas=[
+{label:`${local} gana`,prob:res.p1/100,cuota:parseFloat(q(res.p1)),mercado:'1X2'},
+{label:'Empate',prob:res.pe/100,cuota:parseFloat(q(res.pe)),mercado:'1X2'},
+{label:`${visit} gana`,prob:res.p2/100,cuota:parseFloat(q(res.p2)),mercado:'1X2'},
+{label:'Over 1.5',prob:res.ou15,cuota:parseFloat(q(res.ou15*100)),mercado:'Goles'},
+{label:'Over 2.5',prob:res.ou25,cuota:parseFloat(q(res.ou25*100)),mercado:'Goles'},
+{label:'Under 2.5',prob:1-res.ou25,cuota:parseFloat(q((1-res.ou25)*100)),mercado:'Goles'},
+{label:'BTTS Sí',prob:res.btts,cuota:parseFloat(q(res.btts*100)),mercado:'Goles'},
+{label:'BTTS No',prob:1-res.btts,cuota:parseFloat(q((1-res.btts)*100)),mercado:'Goles'},
+];
+const filtered=apuestas
+.filter(a=>a.prob>=0.52&&a.cuota>=1.20)
+.map(a=>({...a,value:parseFloat((a.prob*a.cuota-1).toFixed(3))}))
+.sort((a,b)=>b.prob-a.prob)
+.slice(0,3);
+const list=document.getElementById('top3-list');
+if(!filtered.length){
+list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">No hay apuestas claras para este partido</div>';
+return;
 }
-
+list.innerHTML=filtered.map((a,i)=>`
+<div class="top3-item" style="border-left-color:${i===0?'var(--green)':i===1?'var(--yellow)':'var(--blue)'}">
+<div class="top3-partido">${local} vs ${visit}</div>
+<div class="top3-mercado">${a.mercado} · ${a.label}</div>
+<div class="top3-stats">
+<span>Prob: <strong style="color:var(--green)">${pct(a.prob)}</strong></span>
+<span>Cuota justa: <strong style="color:var(--blue)">${a.cuota}</strong></span>
+</div>
+</div>`).join('');
+}
 // ═══════════════════════════════════════════════════════
 // ANÁLISIS IA
 // ═══════════════════════════════════════════════════════
 async function analizarIA(){
-  if(!lastRes)return;
-  const out=document.getElementById('ia-output');
-  const load=document.getElementById('loading-ia');
-  out.style.display='none';load.style.display='block';
-
-  try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',max_tokens:600,
-      system:'Eres un analista de fútbol español experto en LaLiga y Segunda División. Análisis conciso, sin asteriscos, en español.',
-      messages:[{role:'user',content:`Analiza este partido de liga española:\n${lastRes.local} vs ${lastRes.visit}\nProbabilidades: ${lastRes.local} ${lastRes.p1}% | Empate ${lastRes.pe}% | ${lastRes.visit} ${lastRes.p2}%\nGoles esperados: ${lastRes.l1} vs ${lastRes.l2}\nMarcador más probable: ${lastRes.marc} (${lastRes.marcP}%)\nOver 2.5: ${pct(lastRes.ou25)} | BTTS: ${pct(lastRes.btts)}\nCerteza del modelo: ${lastRes.conf}%\n${adjFactors.f1!==1.0?'⚠️ Bajas activas en '+lastRes.local:''}\n${adjFactors.f2!==1.0?'⚠️ Bajas activas en '+lastRes.visit:''}\n\nDa: análisis táctico, factores clave, mercados recomendados y predicción final.`}]
-    })});
-    const data=await r.json();
-    out.textContent=data.content?.map(c=>c.text||'').join('')||'Sin respuesta';
-    out.style.display='block';
-  }catch(e){
-    out.textContent='Error al conectar con el análisis IA.';
-    out.style.display='block';
-  }
-  load.style.display='none';
+if(!lastRes)return;
+const out=document.getElementById('ia-output');
+const load=document.getElementById('loading-ia');
+out.style.display='none';load.style.display='block';
+try{
+const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+model:'claude-haiku-4-5-20251001',max_tokens:600,
+system:'Eres un analista de fútbol español experto en LaLiga y Segunda División. Análisis conciso, sin asteriscos, en español.',
+messages:[{role:'user',content:`Analiza este partido de liga española:\n${lastRes.local} vs ${lastRes.visit}\nProbabilidades: ${lastRes.local} ${lastRes.p1}% | Empate ${lastRes.pe}% | ${lastRes.visit} ${lastRes.p2}%\nGoles esperados: ${lastRes.l1} vs ${lastRes.l2}\nMarcador más probable: ${lastRes.marc} (${lastRes.marcP}%)\nOver 2.5: ${pct(lastRes.ou25)} | BTTS: ${pct(lastRes.btts)}\nCerteza del modelo: ${lastRes.conf}%\n${adjFactors.f1!==1.0?'⚠️ Bajas activas en '+lastRes.local:''}\n${adjFactors.f2!==1.0?'⚠️ Bajas activas en '+lastRes.visit:''}\n\nDa: análisis táctico, factores clave, mercados recomendados y predicción final.`}]
+})});
+const data=await r.json();
+out.textContent=data.content?.map(c=>c.text||'').join('')||'Sin respuesta';
+out.style.display='block';
+}catch(e){
+out.textContent='Error al conectar con el análisis IA.';
+out.style.display='block';
 }
-
+load.style.display='none';
+}
 // ═══════════════════════════════════════════════════════
 // COMBINADA
 // ═══════════════════════════════════════════════════════
 function comboChange(){
-  const l=document.getElementById('combo-local').value;
-  const v=document.getElementById('combo-visit').value;
-  if(l&&v&&l!==v)comboLastRes=calcular(l,v);
+const l=document.getElementById('combo-local').value;
+const v=document.getElementById('combo-visit').value;
+if(l&&v&&l!==v)comboLastRes=calcular(l,v);
 }
-
 function addCombo(tipo){
-  const l=document.getElementById('combo-local').value;
-  const v=document.getElementById('combo-visit').value;
-  if(!l||!v||l===v)return;
-  if(!comboLastRes)comboLastRes=calcular(l,v);
-  const r=comboLastRes;
-  const probs={'1':r.p1/100,'X':r.pe/100,'2':r.p2/100};
-  const labels={'1':`${l} gana`,'X':'Empate','2':`${v} gana`};
-  combos.push({partido:`${l} vs ${v}`,mercado:labels[tipo],prob:probs[tipo],tipo:'signo'});
-  renderCombos();
+const l=document.getElementById('combo-local').value;
+const v=document.getElementById('combo-visit').value;
+if(!l||!v||l===v)return;
+if(!comboLastRes)comboLastRes=calcular(l,v);
+const r=comboLastRes;
+const probs={'1':r.p1/100,'X':r.pe/100,'2':r.p2/100};
+const labels={'1':`${l} gana`,'X':'Empate','2':`${v} gana`};
+combos.push({partido:`${l} vs ${v}`,mercado:labels[tipo],prob:probs[tipo],tipo:'signo'});
+renderCombos();
 }
-
 function addComboGol(tipo){
-  const l=document.getElementById('combo-local').value;
-  const v=document.getElementById('combo-visit').value;
-  if(!l||!v||l===v)return;
-  if(!comboLastRes)comboLastRes=calcular(l,v);
-  const r=comboLastRes;
-  const map={
-    over15:{label:'Over 1.5',prob:r.ou15},
-    over25:{label:'Over 2.5',prob:r.ou25},
-    under25:{label:'Under 2.5',prob:1-r.ou25},
-    btts:{label:'BTTS Sí',prob:r.btts}
-  };
-  const m=map[tipo];
-  combos.push({partido:`${l} vs ${v}`,mercado:m.label,prob:m.prob,tipo:'goles'});
-  renderCombos();
+const l=document.getElementById('combo-local').value;
+const v=document.getElementById('combo-visit').value;
+if(!l||!v||l===v)return;
+if(!comboLastRes)comboLastRes=calcular(l,v);
+const r=comboLastRes;
+const map={
+over15:{label:'Over 1.5',prob:r.ou15},
+over25:{label:'Over 2.5',prob:r.ou25},
+under25:{label:'Under 2.5',prob:1-r.ou25},
+btts:{label:'BTTS Sí',prob:r.btts}
+};
+const m=map[tipo];
+combos.push({partido:`${l} vs ${v}`,mercado:m.label,prob:m.prob,tipo:'goles'});
+renderCombos();
 }
-
 function renderCombos(){
-  const list=document.getElementById('combo-list');
-  const res=document.getElementById('combo-result');
-  if(!combos.length){list.innerHTML='';res.style.display='none';return;}
-
-  list.innerHTML=combos.map((c,i)=>`
-    <div class="combinada-item">
-      <div>
-        <div style="font-size:10px;font-weight:600">${c.partido}</div>
-        <div style="font-size:9px;color:var(--blue)">${c.mercado} · ${pct(c.prob)}</div>
-      </div>
-      <button class="combinada-remove" onclick="removeCombo(${i})">✕</button>
-    </div>`).join('');
-
-  const probConj=combos.reduce((a,c)=>a*c.prob,1);
-  const cuota=parseFloat((1/probConj).toFixed(2));
-  res.style.display='block';
-  res.innerHTML=`
-    <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:6px">COMBINADA · ${combos.length} SELECCIONES</div>
-    <div style="display:flex;justify-content:space-between">
-      <div><div style="font-size:9px;color:var(--muted)">PROB. CONJUNTA</div><div style="font-size:20px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--yellow)">${pct(probConj)}</div></div>
-      <div><div style="font-size:9px;color:var(--muted)">CUOTA JUSTA</div><div style="font-size:20px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--blue)">${cuota}</div></div>
-    </div>`;
+const list=document.getElementById('combo-list');
+const res=document.getElementById('combo-result');
+if(!combos.length){list.innerHTML='';res.style.display='none';return;}
+list.innerHTML=combos.map((c,i)=>`
+<div class="combinada-item">
+<div>
+<div style="font-size:10px;font-weight:600">${c.partido}</div>
+<div style="font-size:9px;color:var(--blue)">${c.mercado} · ${pct(c.prob)}</div>
+</div>
+<button class="combinada-remove" onclick="removeCombo(${i})">✕</button>
+</div>`).join('');
+const probConj=combos.reduce((a,c)=>a*c.prob,1);
+const cuota=parseFloat((1/probConj).toFixed(2));
+res.style.display='block';
+res.innerHTML=`
+<div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:6px">COMBINADA · ${combos.length} SELECCIONES</div>
+<div style="display:flex;justify-content:space-between">
+<div><div style="font-size:9px;color:var(--muted)">PROB. CONJUNTA</div><div style="font-size:20px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--yellow)">${pct(probConj)}</div></div>
+<div><div style="font-size:9px;color:var(--muted)">CUOTA JUSTA</div><div style="font-size:20px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--blue)">${cuota}</div></div>
+</div>`;
 }
-
 function removeCombo(i){combos.splice(i,1);renderCombos();}
-
 async function analizarCombo(){
-  if(!combos.length)return;
-  const out=document.getElementById('combo-output');
-  const load=document.getElementById('loading-combo');
-  out.style.display='none';load.style.display='block';
-
-  const probConj=combos.reduce((a,c)=>a*c.prob,1);
-  const resumen=combos.map(c=>`${c.partido}: ${c.mercado} (${pct(c.prob)})`).join('\n');
-
-  try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',max_tokens:500,
-      system:'Analista fútbol español. Analiza combinadas de LaLiga/Segunda. Español conciso, sin asteriscos.',
-      messages:[{role:'user',content:`Analiza esta combinada de liga española:\n${resumen}\nProbabilidad conjunta: ${pct(probConj)}\n\n¿Tiene coherencia estadística? ¿Hay correlaciones entre las selecciones? ¿Es una buena combinada? Recomendación final.`}]
-    })});
-    const data=await r.json();
-    out.textContent=data.content?.map(c=>c.text||'').join('')||'Sin respuesta';
-    out.style.display='block';
-  }catch(e){
-    out.textContent='Error al conectar con el análisis IA.';
-    out.style.display='block';
-  }
-  load.style.display='none';
+if(!combos.length)return;
+const out=document.getElementById('combo-output');
+const load=document.getElementById('loading-combo');
+out.style.display='none';load.style.display='block';
+const probConj=combos.reduce((a,c)=>a*c.prob,1);
+const resumen=combos.map(c=>`${c.partido}: ${c.mercado} (${pct(c.prob)})`).join('\n');
+try{
+const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+model:'claude-haiku-4-5-20251001',max_tokens:500,
+system:'Analista fútbol español. Analiza combinadas de LaLiga/Segunda. Español conciso, sin asteriscos.',
+messages:[{role:'user',content:`Analiza esta combinada de liga española:\n${resumen}\nProbabilidad conjunta: ${pct(probConj)}\n\n¿Tiene coherencia estadística? ¿Hay correlaciones entre las selecciones? ¿Es una buena combinada? Recomendación final.`}]
+})});
+const data=await r.json();
+out.textContent=data.content?.map(c=>c.text||'').join('')||'Sin respuesta';
+out.style.display='block';
+}catch(e){
+out.textContent='Error al conectar con el análisis IA.';
+out.style.display='block';
 }
-
+load.style.display='none';
+}
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 fillSelects();
 fillClasificacion();
 </script>
-
 <!-- PROXY FUNCTIONS NEEDED: netlify/functions/claude.js -->
 </body>
 </html>
