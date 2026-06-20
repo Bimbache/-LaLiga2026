@@ -439,52 +439,52 @@ select:focus{outline:none;border-color:var(--blue)}
 // DATOS BASE — 20 EQUIPOS LALIGA 26/27
 // ═══════════════════════════════════════════════════════
 const EQUIPOS_LALIGA = {
-  "Real Madrid":      {elo:2105,atk:1.92,def:0.72,forma:0.88,fw:0.90,ciudad:"Madrid"},
-  "Barcelona":        {elo:2088,atk:1.88,def:0.78,forma:0.86,fw:0.88,ciudad:"Barcelona"},
-  "Atlético Madrid":  {elo:1998,atk:1.42,def:0.65,forma:0.78,fw:0.80,ciudad:"Madrid"},
-  "Athletic Bilbao":  {elo:1892,atk:1.38,def:0.95,forma:0.72,fw:0.74,ciudad:"Bilbao"},
-  "Real Sociedad":    {elo:1875,atk:1.32,def:0.98,forma:0.70,fw:0.71,ciudad:"San Sebastián"},
-  "Villarreal":       {elo:1858,atk:1.35,def:1.02,forma:0.68,fw:0.70,ciudad:"Villarreal"},
-  "Betis":            {elo:1845,atk:1.30,def:1.05,forma:0.67,fw:0.68,ciudad:"Sevilla"},
-  "Sevilla":          {elo:1838,atk:1.28,def:1.08,forma:0.65,fw:0.66,ciudad:"Sevilla"},
-  "Celta Vigo":       {elo:1798,atk:1.25,def:1.15,forma:0.62,fw:0.63,ciudad:"Vigo"},
-  "Getafe":           {elo:1775,atk:0.98,def:0.92,forma:0.58,fw:0.59,ciudad:"Getafe"},
-  "Osasuna":          {elo:1768,atk:1.10,def:1.05,forma:0.60,fw:0.61,ciudad:"Pamplona"},
-  "Girona":           {elo:1762,atk:1.35,def:1.12,forma:0.62,fw:0.63,ciudad:"Girona"},
-  "Rayo Vallecano":   {elo:1748,atk:1.05,def:1.10,forma:0.58,fw:0.59,ciudad:"Madrid"},
-  "Mallorca":         {elo:1742,atk:0.95,def:1.02,forma:0.57,fw:0.58,ciudad:"Palma"},
-  "Alavés":           {elo:1722,atk:0.98,def:1.18,forma:0.55,fw:0.56,ciudad:"Vitoria"},
-  "Valladolid":       {elo:1712,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Valladolid"},
-  "Leganés":          {elo:1705,atk:0.88,def:1.20,forma:0.52,fw:0.53,ciudad:"Leganés"},
-  "Las Palmas":       {elo:1718,atk:1.05,def:1.25,forma:0.54,fw:0.55,ciudad:"Las Palmas"},
-  "Espanyol":         {elo:1725,atk:1.02,def:1.18,forma:0.55,fw:0.56,ciudad:"Barcelona"},
-  "Valencia":         {elo:1758,atk:1.12,def:1.10,forma:0.60,fw:0.61,ciudad:"Valencia"},
+  "Real Madrid":      {elo:2105,atk:1.92,def:0.72,forma:0.88,fw:0.90,ciudad:"Madrid",localia:1.10},
+  "Barcelona":        {elo:2088,atk:1.88,def:0.78,forma:0.86,fw:0.88,ciudad:"Barcelona",localia:1.08},
+  "Atlético Madrid":  {elo:1998,atk:1.42,def:0.65,forma:0.78,fw:0.80,ciudad:"Madrid",localia:1.13},
+  "Athletic Bilbao":  {elo:1892,atk:1.38,def:0.95,forma:0.72,fw:0.74,ciudad:"Bilbao",localia:1.16},
+  "Real Sociedad":    {elo:1875,atk:1.32,def:0.98,forma:0.70,fw:0.71,ciudad:"San Sebastián",localia:1.12},
+  "Villarreal":       {elo:1858,atk:1.35,def:1.02,forma:0.68,fw:0.70,ciudad:"Villarreal",localia:1.10},
+  "Betis":            {elo:1845,atk:1.30,def:1.05,forma:0.67,fw:0.68,ciudad:"Sevilla",localia:1.14},
+  "Sevilla":          {elo:1838,atk:1.28,def:1.08,forma:0.65,fw:0.66,ciudad:"Sevilla",localia:1.10},
+  "Celta Vigo":       {elo:1798,atk:1.25,def:1.15,forma:0.62,fw:0.63,ciudad:"Vigo",localia:1.10},
+  "Getafe":           {elo:1775,atk:0.98,def:0.92,forma:0.58,fw:0.59,ciudad:"Getafe",localia:1.06},
+  "Osasuna":          {elo:1768,atk:1.10,def:1.05,forma:0.60,fw:0.61,ciudad:"Pamplona",localia:1.15},
+  "Girona":           {elo:1762,atk:1.35,def:1.12,forma:0.62,fw:0.63,ciudad:"Girona",localia:1.09},
+  "Rayo Vallecano":   {elo:1748,atk:1.05,def:1.10,forma:0.58,fw:0.59,ciudad:"Madrid",localia:1.13},
+  "Mallorca":         {elo:1742,atk:0.95,def:1.02,forma:0.57,fw:0.58,ciudad:"Palma",localia:1.11},
+  "Alavés":           {elo:1722,atk:0.98,def:1.18,forma:0.55,fw:0.56,ciudad:"Vitoria",localia:1.08},
+  "Valladolid":       {elo:1712,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Valladolid",localia:1.08},
+  "Leganés":          {elo:1705,atk:0.88,def:1.20,forma:0.52,fw:0.53,ciudad:"Leganés",localia:1.06},
+  "Las Palmas":       {elo:1718,atk:1.05,def:1.25,forma:0.54,fw:0.55,ciudad:"Las Palmas",localia:1.10},
+  "Espanyol":         {elo:1725,atk:1.02,def:1.18,forma:0.55,fw:0.56,ciudad:"Barcelona",localia:1.07},
+  "Valencia":         {elo:1758,atk:1.12,def:1.10,forma:0.60,fw:0.61,ciudad:"Valencia",localia:1.10},
 };
 
 // ═══════════════════════════════════════════════════════
 // DATOS BASE — 20 EQUIPOS SEGUNDA DIVISIÓN 26/27
 // ═══════════════════════════════════════════════════════
 const EQUIPOS_SEGUNDA = {
-  "Deportivo Coruña":   {elo:1698,atk:1.25,def:1.05,forma:0.65,fw:0.66,ciudad:"A Coruña"},
-  "Zaragoza":           {elo:1692,atk:1.18,def:1.10,forma:0.63,fw:0.64,ciudad:"Zaragoza"},
-  "Racing Santander":   {elo:1685,atk:1.15,def:1.12,forma:0.62,fw:0.63,ciudad:"Santander"},
-  "Sporting Gijón":     {elo:1678,atk:1.12,def:1.15,forma:0.61,fw:0.62,ciudad:"Gijón"},
-  "Oviedo":             {elo:1672,atk:1.10,def:1.08,forma:0.60,fw:0.61,ciudad:"Oviedo"},
-  "Mirandés":           {elo:1665,atk:1.05,def:1.10,forma:0.59,fw:0.60,ciudad:"Miranda de Ebro"},
-  "Eldense":            {elo:1645,atk:0.95,def:1.20,forma:0.55,fw:0.56,ciudad:"Elda"},
-  "Burgos":             {elo:1652,atk:1.00,def:1.15,forma:0.57,fw:0.58,ciudad:"Burgos"},
-  "Huesca":             {elo:1658,atk:1.08,def:1.12,forma:0.58,fw:0.59,ciudad:"Huesca"},
-  "Levante":            {elo:1675,atk:1.15,def:1.08,forma:0.62,fw:0.63,ciudad:"Valencia"},
-  "Almería":            {elo:1648,atk:1.02,def:1.18,forma:0.56,fw:0.57,ciudad:"Almería"},
-  "Córdoba":            {elo:1642,atk:0.98,def:1.20,forma:0.55,fw:0.56,ciudad:"Córdoba"},
-  "Ferrol":             {elo:1635,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Ferrol"},
-  "Tenerife":           {elo:1655,atk:1.05,def:1.15,forma:0.57,fw:0.58,ciudad:"Santa Cruz de Tenerife"},
-  "Cartagena":          {elo:1638,atk:0.95,def:1.18,forma:0.54,fw:0.55,ciudad:"Cartagena"},
-  "Castellón":          {elo:1630,atk:0.90,def:1.22,forma:0.52,fw:0.53,ciudad:"Castellón"},
-  "Numancia":           {elo:1625,atk:0.88,def:1.25,forma:0.51,fw:0.52,ciudad:"Soria"},
-  "Andorra":            {elo:1620,atk:0.85,def:1.28,forma:0.50,fw:0.51,ciudad:"Andorra"},
-  "Ibiza":              {elo:1618,atk:0.88,def:1.30,forma:0.50,fw:0.51,ciudad:"Ibiza"},
-  "Alcorcón":           {elo:1615,atk:0.85,def:1.32,forma:0.49,fw:0.50,ciudad:"Alcorcón"},
+  "Deportivo Coruña":   {elo:1698,atk:1.25,def:1.05,forma:0.65,fw:0.66,ciudad:"A Coruña",localia:1.14},
+  "Zaragoza":           {elo:1692,atk:1.18,def:1.10,forma:0.63,fw:0.64,ciudad:"Zaragoza",localia:1.10},
+  "Racing Santander":   {elo:1685,atk:1.15,def:1.12,forma:0.62,fw:0.63,ciudad:"Santander",localia:1.12},
+  "Sporting Gijón":     {elo:1678,atk:1.12,def:1.15,forma:0.61,fw:0.62,ciudad:"Gijón",localia:1.12},
+  "Oviedo":             {elo:1672,atk:1.10,def:1.08,forma:0.60,fw:0.61,ciudad:"Oviedo",localia:1.10},
+  "Mirandés":           {elo:1665,atk:1.05,def:1.10,forma:0.59,fw:0.60,ciudad:"Miranda de Ebro",localia:1.09},
+  "Eldense":            {elo:1645,atk:0.95,def:1.20,forma:0.55,fw:0.56,ciudad:"Elda",localia:1.07},
+  "Burgos":             {elo:1652,atk:1.00,def:1.15,forma:0.57,fw:0.58,ciudad:"Burgos",localia:1.08},
+  "Huesca":             {elo:1658,atk:1.08,def:1.12,forma:0.58,fw:0.59,ciudad:"Huesca",localia:1.08},
+  "Levante":            {elo:1675,atk:1.15,def:1.08,forma:0.62,fw:0.63,ciudad:"Valencia",localia:1.09},
+  "Almería":            {elo:1648,atk:1.02,def:1.18,forma:0.56,fw:0.57,ciudad:"Almería",localia:1.08},
+  "Córdoba":            {elo:1642,atk:0.98,def:1.20,forma:0.55,fw:0.56,ciudad:"Córdoba",localia:1.11},
+  "Ferrol":             {elo:1635,atk:0.92,def:1.22,forma:0.53,fw:0.54,ciudad:"Ferrol",localia:1.08},
+  "Tenerife":           {elo:1655,atk:1.05,def:1.15,forma:0.57,fw:0.58,ciudad:"Santa Cruz de Tenerife",localia:1.11},
+  "Cartagena":          {elo:1638,atk:0.95,def:1.18,forma:0.54,fw:0.55,ciudad:"Cartagena",localia:1.08},
+  "Castellón":          {elo:1630,atk:0.90,def:1.22,forma:0.52,fw:0.53,ciudad:"Castellón",localia:1.08},
+  "Numancia":           {elo:1625,atk:0.88,def:1.25,forma:0.51,fw:0.52,ciudad:"Soria",localia:1.07},
+  "Andorra":            {elo:1620,atk:0.85,def:1.28,forma:0.50,fw:0.51,ciudad:"Andorra",localia:1.09},
+  "Ibiza":              {elo:1618,atk:0.88,def:1.30,forma:0.50,fw:0.51,ciudad:"Ibiza",localia:1.10},
+  "Alcorcón":           {elo:1615,atk:0.85,def:1.32,forma:0.49,fw:0.50,ciudad:"Alcorcón",localia:1.06},
 };
 
 // ═══════════════════════════════════════════════════════
@@ -615,8 +615,11 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const forma1=s1.forma*0.40+s1.fw*0.60;
   const forma2=s2.forma*0.40+s2.fw*0.60;
 
+  // PUNTO 10 — Localía específica por equipo (sustituye el *1.1 genérico anterior)
+  const localia1=s1.localia||1.10;
+
   // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*1.1*f1);
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*f1);
   const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*f2);
 
   const disp1=s1.disp||DISP_DEFAULT;
