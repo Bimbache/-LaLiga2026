@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -304,6 +305,36 @@ select:focus{outline:none;border-color:var(--blue)}
 <!-- CLASIFICACION -->
 <div class="section" id="section-clasificacion">
   <div class="card">
+    <div class="card-title">📝 ELO DINÁMICO · INTRODUCIR RESULTADO</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>LOCAL</label>
+        <select id="res-local" onchange="onResultadoSelectChange()"></select>
+      </div>
+      <div class="select-wrap">
+        <label>VISITANTE</label>
+        <select id="res-visit" onchange="onResultadoSelectChange()"></select>
+      </div>
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>GOLES LOCAL</label>
+        <input type="number" min="0" max="15" id="res-gl" value="0" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+      <div class="select-wrap">
+        <label>GOLES VISITANTE</label>
+        <input type="number" min="0" max="15" id="res-gv" value="0" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+    </div>
+    <button class="btn" onclick="aplicarResultado()">⚡ Actualizar ELO</button>
+    <div id="res-feedback" style="display:none;margin-top:8px;font-size:10px;text-align:center"></div>
+    <button class="btn btn-secondary" style="margin-top:6px;font-size:10px" onclick="if(confirm('¿Resetear todos los ajustes de ELO de esta liga?'))resetELO()">Resetear ELO a valores base</button>
+  </div>
+
+  <div class="card">
     <div class="card-title" id="clas-title">CLASIFICACIÓN LALIGA 26/27</div>
     <table class="clas-table">
       <thead><tr>
@@ -429,6 +460,47 @@ let lastRes = null;
 let comboLastRes = null;
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 7 — ELO DINÁMICO POR JORNADA
+// ELO_nuevo = ELO_actual + K × (resultado_real - resultado_esperado)
+// Se guarda como AJUSTE (delta) sobre el ELO base, persistido en
+// localStorage. Fuente del resultado: campo manual (ver documento
+// maestro punto 7 — pendiente automatizar con API de resultados).
+// ═══════════════════════════════════════════════════════
+const ELO_K=24;
+let eloAjustes={laliga:{},segunda:{}};
+try{
+  const guardado=localStorage.getItem('elo_ajustes_v1');
+  if(guardado)eloAjustes=JSON.parse(guardado);
+}catch(e){}
+
+function eloEfectivo(nombre,datosBase){
+  const ajuste=(eloAjustes[LIGA]&&eloAjustes[LIGA][nombre])||0;
+  return datosBase.elo+ajuste;
+}
+
+function actualizarELO(local,visit,golesLocal,golesVisit){
+  const s1=EQUIPOS[local],s2=EQUIPOS[visit];
+  if(!s1||!s2)return false;
+  const elo1=eloEfectivo(local,s1),elo2=eloEfectivo(visit,s2);
+  const eloP=1/(1+Math.pow(10,-(elo1-elo2)/400)); // resultado esperado local
+  const real=golesLocal>golesVisit?1:golesLocal===golesVisit?0.5:0;
+  const delta=ELO_K*(real-eloP);
+
+  if(!eloAjustes[LIGA])eloAjustes[LIGA]={};
+  eloAjustes[LIGA][local]=((eloAjustes[LIGA][local]||0)+delta);
+  eloAjustes[LIGA][visit]=((eloAjustes[LIGA][visit]||0)-delta);
+
+  try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+  return{delta:delta.toFixed(1),eloP:(eloP*100).toFixed(1)};
+}
+
+function resetELO(){
+  eloAjustes[LIGA]={};
+  try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+  fillClasificacion();
+}
+
+// ═══════════════════════════════════════════════════════
 // MODELO DIXON-COLES + NEGATIVE BINOMIAL (analítico, sin simulación)
 // ═══════════════════════════════════════════════════════
 function poisson(l,k){
@@ -484,7 +556,9 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const s2=EQUIPOS[visit];
   if(!s1||!s2)return null;
 
-  const eloDiff=s1.elo-s2.elo;
+  const elo1=eloEfectivo(local,s1);
+  const elo2=eloEfectivo(visit,s2);
+  const eloDiff=elo1-elo2;
   const eloP=1/(1+Math.pow(10,-eloDiff/400));
 
   const forma1=s1.forma*0.40+s1.fw*0.60;
@@ -570,19 +644,74 @@ function fillSelects(){
 
 function fillClasificacion(){
   const body=document.getElementById('clas-body');
-  const equipos=Object.entries(EQUIPOS).sort((a,b)=>b[1].elo-a[1].elo);
+  const equipos=Object.entries(EQUIPOS)
+    .map(([nombre,d])=>[nombre,d,eloEfectivo(nombre,d)])
+    .sort((a,b)=>b[2]-a[2]);
   const colors=['#ffd700','#c0c0c0','#cd7f32'];
-  body.innerHTML=equipos.map(([nombre,d],i)=>{
+  body.innerHTML=equipos.map(([nombre,d,eloEf],i)=>{
     const col=i<3?colors[i]:i<4?'#1e90ff':i>=17?'#ff4444':'var(--muted)';
+    const ajuste=eloEf-d.elo;
+    const ajusteTxt=Math.abs(ajuste)>=1?`<span style="font-size:8px;color:${ajuste>0?'var(--green)':'var(--red)'}"> (${ajuste>0?'+':''}${ajuste.toFixed(0)})</span>`:'';
     return`<tr>
       <td><span class="pos-badge" style="background:${col}20;color:${col}">${i+1}</span>${nombre}</td>
-      <td style="color:var(--blue)">${d.elo}</td>
+      <td style="color:var(--blue)">${eloEf.toFixed(0)}${ajusteTxt}</td>
       <td style="color:var(--green)">${d.atk.toFixed(2)}</td>
       <td style="color:var(--red)">${d.def.toFixed(2)}</td>
       <td>${((d.atk+d.def)/2).toFixed(2)}</td>
     </tr>`;
   }).join('');
   document.getElementById('clas-title').textContent=`CLASIFICACIÓN ${LIGA==='laliga'?'LALIGA':'2ª DIVISIÓN'} 26/27`;
+  fillResultadoSelects();
+}
+
+// ─── Panel de resultados manuales (ELO dinámico) ───
+function fillResultadoSelects(){
+  const equipos=Object.keys(EQUIPOS).sort();
+  ['res-local','res-visit'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const prev=el.value;
+    el.innerHTML=equipos.map(e=>`<option value="${e}">${e}</option>`).join('');
+    if(prev&&equipos.includes(prev))el.value=prev;
+    else el.value=equipos[0];
+  });
+  const loc=document.getElementById('res-local').value;
+  const vis=document.getElementById('res-visit');
+  if(vis.value===loc)vis.value=equipos.find(e=>e!==loc);
+  document.getElementById('res-feedback').style.display='none';
+}
+
+function onResultadoSelectChange(){
+  document.getElementById('res-feedback').style.display='none';
+}
+
+function aplicarResultado(){
+  const local=document.getElementById('res-local').value;
+  const visit=document.getElementById('res-visit').value;
+  const gl=parseInt(document.getElementById('res-gl').value);
+  const gv=parseInt(document.getElementById('res-gv').value);
+  if(local===visit){
+    alert('Local y visitante deben ser distintos');
+    return;
+  }
+  if(isNaN(gl)||isNaN(gv)||gl<0||gv<0){
+    alert('Introduce un resultado válido');
+    return;
+  }
+  const r=actualizarELO(local,visit,gl,gv);
+  if(!r)return;
+
+  const fb=document.getElementById('res-feedback');
+  const real=gl>gv?'1':gl===gv?'X':'2';
+  fb.innerHTML=`✅ ${local} ${gl}-${gv} ${visit} aplicado. Esperado local: ${r.eloP}% · Resultado real: ${real} · Δ ELO: ${r.delta>0?'+':''}${r.delta}`;
+  fb.style.color='var(--green)';
+  fb.style.display='block';
+
+  fillClasificacion();
+  // Si el partido coincide con el seleccionado en PARTIDO, refrescar
+  if(document.getElementById('sel-local').value===local&&document.getElementById('sel-visit').value===visit){
+    mostrarResultado();
+  }
 }
 
 function setLiga(liga){
