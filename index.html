@@ -1,7 +1,4 @@
 
-
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -706,6 +703,10 @@ function aplicarResultado(){
   fb.innerHTML=`✅ ${local} ${gl}-${gv} ${visit} aplicado. Esperado local: ${r.eloP}% · Resultado real: ${real} · Δ ELO: ${r.delta>0?'+':''}${r.delta}`;
   fb.style.color='var(--green)';
   fb.style.display='block';
+
+  // Vaciar campos para evitar reaplicar el mismo resultado por error
+  document.getElementById('res-gl').value='';
+  document.getElementById('res-gv').value='';
 
   fillClasificacion();
   // Si el partido coincide con el seleccionado en PARTIDO, refrescar
