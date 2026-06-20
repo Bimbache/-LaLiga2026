@@ -503,8 +503,18 @@ let comboLastRes = null;
 // Se guarda como AJUSTE (delta) sobre el ELO base, persistido en
 // localStorage. Fuente del resultado: campo manual (ver documento
 // maestro punto 7 — pendiente automatizar con API de resultados).
+//
+// PUNTO 9 — REGRESIÓN A LA MEDIA
+// Antes de sumar el nuevo delta, el ajuste acumulado existente se
+// multiplica por REGRESION_FACTOR (<1). Esto hace que desviaciones
+// grandes respecto al nivel base (rachas muy buenas/malas) se atenúen
+// con el tiempo de forma proporcional — exactamente el comportamiento
+// de "regresión a la media": cuanto más lejos del promedio, más tira
+// hacia él en cada partido. Sin esto, una racha de suerte se acumularía
+// sin límite en el ELO efectivo.
 // ═══════════════════════════════════════════════════════
 const ELO_K=24;
+const REGRESION_FACTOR=0.90; // cada partido, el ajuste acumulado se atenúa un 10%
 let eloAjustes={laliga:{},segunda:{}};
 try{
   const guardado=localStorage.getItem('elo_ajustes_v1');
@@ -525,8 +535,11 @@ function actualizarELO(local,visit,golesLocal,golesVisit){
   const delta=ELO_K*(real-eloP);
 
   if(!eloAjustes[LIGA])eloAjustes[LIGA]={};
-  eloAjustes[LIGA][local]=((eloAjustes[LIGA][local]||0)+delta);
-  eloAjustes[LIGA][visit]=((eloAjustes[LIGA][visit]||0)-delta);
+  // Regresión a la media: el ajuste previo se atenúa antes de sumar el nuevo delta
+  const prevLocal=(eloAjustes[LIGA][local]||0)*REGRESION_FACTOR;
+  const prevVisit=(eloAjustes[LIGA][visit]||0)*REGRESION_FACTOR;
+  eloAjustes[LIGA][local]=prevLocal+delta;
+  eloAjustes[LIGA][visit]=prevVisit-delta;
 
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
   return{delta:delta.toFixed(1),eloP:(eloP*100).toFixed(1)};
