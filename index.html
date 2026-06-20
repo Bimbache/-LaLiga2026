@@ -343,6 +343,23 @@ select:focus{outline:none;border-color:var(--blue)}
 <!-- CLASIFICACION -->
 <div class="section" id="section-clasificacion">
   <div class="card">
+    <div class="card-title">📅 JORNADA ACTUAL · FACTOR MOTIVACIÓN</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Solo se activa en las últimas 10 jornadas: +4% para equipos en zona Champions o descenso, -3% para equipos sin nada en juego.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>JORNADA</label>
+        <input type="number" min="1" max="42" id="jornada-input" oninput="onJornadaChange()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+      <div class="select-wrap">
+        <label>ESTADO</label>
+        <div id="jornada-estado" style="padding:8px 10px;font-size:10px;color:var(--muted)">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📝 ELO DINÁMICO · INTRODUCIR RESULTADO</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
@@ -552,6 +569,48 @@ function resetELO(){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 11 — FACTOR MOTIVACIÓN
+// Ajusta el rendimiento esperado según la posición en la tabla y
+// la fase de la temporada. Solo se activa en las últimas 10 jornadas
+// (cuando de verdad aprieta la tabla) para Champions (top 4) y
+// descenso (últimos 3) — el resto de la temporada el factor es
+// neutro (1.0) porque la presión real aún no existe.
+// ═══════════════════════════════════════════════════════
+let jornadaActual={laliga:1,segunda:1};
+try{
+  const g=localStorage.getItem('jornada_actual_v1');
+  if(g)jornadaActual=JSON.parse(g);
+}catch(e){}
+
+function getJornadaActual(){return jornadaActual[LIGA]||1;}
+function setJornadaActual(j){
+  jornadaActual[LIGA]=Math.max(1,Math.min(50,j));
+  try{localStorage.setItem('jornada_actual_v1',JSON.stringify(jornadaActual));}catch(e){}
+}
+
+function getPosicionTabla(nombre){
+  const ranking=Object.entries(EQUIPOS)
+    .map(([n,d])=>[n,eloEfectivo(n,d)])
+    .sort((a,b)=>b[1]-a[1])
+    .map(([n])=>n);
+  return ranking.indexOf(nombre)+1; // 1-based
+}
+
+function factorMotivacion(nombre){
+  const total=Object.keys(EQUIPOS).length;
+  const totalJornadas=LIGA==='laliga'?38:42;
+  const jornada=getJornadaActual();
+  const restantes=totalJornadas-jornada;
+  if(restantes>10)return 1.0; // fuera de la recta final, sin presión especial todavía
+
+  const pos=getPosicionTabla(nombre);
+  const enDescenso=pos>total-3;
+  const enChampions=pos<=4;
+  if(enDescenso||enChampions)return 1.04; // se juegan algo importante
+  return 0.97; // mitad de tabla sin nada en juego, posible relajación
+}
+
+// ═══════════════════════════════════════════════════════
 // MODELO DIXON-COLES + NEGATIVE BINOMIAL (analítico, sin simulación)
 // ═══════════════════════════════════════════════════════
 function poisson(l,k){
@@ -618,9 +677,13 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   // PUNTO 10 — Localía específica por equipo (sustituye el *1.1 genérico anterior)
   const localia1=s1.localia||1.10;
 
+  // PUNTO 11 — Factor motivación (Champions/descenso en recta final)
+  const motiv1=factorMotivacion(local);
+  const motiv2=factorMotivacion(visit);
+
   // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*f2);
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*f1);
+  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*f2);
 
   const disp1=s1.disp||DISP_DEFAULT;
   const disp2=s2.disp||DISP_DEFAULT;
@@ -733,6 +796,34 @@ function fillResultadoSelects(){
   const vis=document.getElementById('res-visit');
   if(vis.value===loc)vis.value=equipos.find(e=>e!==loc);
   document.getElementById('res-feedback').style.display='none';
+  fillJornadaUI();
+}
+
+function fillJornadaUI(){
+  const el=document.getElementById('jornada-input');
+  if(!el)return;
+  el.value=getJornadaActual();
+  actualizarEstadoJornada();
+}
+
+function onJornadaChange(){
+  const v=parseInt(document.getElementById('jornada-input').value);
+  if(isNaN(v))return;
+  setJornadaActual(v);
+  actualizarEstadoJornada();
+  if(lastRes)mostrarResultado(); // refrescar si hay partido seleccionado
+}
+
+function actualizarEstadoJornada(){
+  const totalJornadas=LIGA==='laliga'?38:42;
+  const restantes=totalJornadas-getJornadaActual();
+  const estado=document.getElementById('jornada-estado');
+  if(!estado)return;
+  if(restantes>10){
+    estado.innerHTML=`<span style="color:var(--muted)">Fase regular — sin presión extra (${restantes} jornadas restantes)</span>`;
+  }else{
+    estado.innerHTML=`<span style="color:var(--yellow)">⚡ Recta final — motivación activa (${restantes} jornadas restantes)</span>`;
+  }
 }
 
 function onResultadoSelectChange(){
