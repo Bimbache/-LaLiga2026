@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -273,6 +272,43 @@ select:focus{outline:none;border-color:var(--blue)}
       <div style="font-size:9px;color:var(--muted);margin-top:6px;line-height:1.5">
         Edge = (Probabilidad modelo × Cuota casa) − 1. Verde = value a favor. Rojo = sin value.
       </div>
+    </div>
+  </div>
+
+  <!-- MERCADOS ASIÁTICOS / O-U BAYESIANO — PUNTO 17 -->
+  <div id="ou-bayes-wrap" style="display:none" class="card">
+    <div class="card-title">⚖️ OVER/UNDER 2.5 · MODELO 70% + MERCADO 30%</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Extiende el mismo mecanismo del punto 6 al mercado de goles más líquido — introduce las cuotas reales de Over/Under 2.5.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>CUOTA OVER 2.5</label>
+        <input type="number" step="0.01" min="1.01" id="ou-bayes-over" placeholder="ej. 1.85" oninput="calcularOUBayes()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+      <div class="select-wrap">
+        <label>CUOTA UNDER 2.5</label>
+        <input type="number" step="0.01" min="1.01" id="ou-bayes-under" placeholder="ej. 1.95" oninput="calcularOUBayes()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+    </div>
+    <button class="btn btn-secondary" style="font-size:10px" onclick="limpiarOUBayes()">Limpiar</button>
+    <div id="ou-bayes-result" style="display:none;margin-top:10px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:8px">PROBABILIDAD AJUSTADA</div>
+      <div class="prob-row">
+        <div class="prob-item">
+          <div class="prob-label">OVER 2.5</div>
+          <div class="prob-value" id="ou-bayes-pover" style="color:var(--red)">--%</div>
+          <div class="prob-cuota" id="ou-bayes-edgeOver">--</div>
+        </div>
+        <div class="prob-item">
+          <div class="prob-label">UNDER 2.5</div>
+          <div class="prob-value" id="ou-bayes-punder" style="color:var(--green)">--%</div>
+          <div class="prob-cuota" id="ou-bayes-edgeUnder">--</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.5">
+      Handicap asiático implícito del modelo: <span id="ou-handicap" style="color:var(--blue);font-weight:600">--</span> (diferencia de goles esperados λ1-λ2; útil para comparar con la línea de hándicap que ofrezca tu casa).
     </div>
   </div>
 
@@ -1231,6 +1267,12 @@ function mostrarResultado(){
   limpiarBayes();
   document.getElementById('bayes-wrap').style.display='block';
 
+  // Mercados asiáticos / O-U bayesiano — punto 17
+  limpiarOUBayes();
+  document.getElementById('ou-handicap').textContent=
+    (res.handi>0?'+':'')+res.handi+' ('+local.split(' ').pop()+')';
+  document.getElementById('ou-bayes-wrap').style.display='block';
+
   // H2H — punto 8
   document.getElementById('h2h-lbl1').textContent='VICT. '+local.split(' ').pop().toUpperCase();
   document.getElementById('h2h-lbl2').textContent='VICT. '+visit.split(' ').pop().toUpperCase();
@@ -1377,6 +1419,56 @@ function calcularBayes(){
   document.getElementById('bayes-edge2').innerHTML=fmtEdge(edge2);
 
   document.getElementById('bayes-result').style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 17 — MERCADOS ASIÁTICOS / O-U BAYESIANO
+// Mismo mecanismo del punto 6 (blend 70/30) extendido al mercado
+// de Over/Under 2.5 — el más líquido fuera del 1X2. También se
+// muestra el handicap asiático implícito del modelo (λ1-λ2) como
+// referencia informativa frente a la línea ofrecida por la casa.
+// ═══════════════════════════════════════════════════════
+function limpiarOUBayes(){
+  document.getElementById('ou-bayes-over').value='';
+  document.getElementById('ou-bayes-under').value='';
+  document.getElementById('ou-bayes-result').style.display='none';
+}
+
+function calcularOUBayes(){
+  if(!lastRes)return;
+  const qOver=parseFloat(document.getElementById('ou-bayes-over').value);
+  const qUnder=parseFloat(document.getElementById('ou-bayes-under').value);
+
+  if(!qOver||!qUnder||qOver<1.01||qUnder<1.01){
+    document.getElementById('ou-bayes-result').style.display='none';
+    return;
+  }
+
+  const impOver=1/qOver, impUnder=1/qUnder;
+  const overround=impOver+impUnder;
+  const mktOver=impOver/overround, mktUnder=impUnder/overround;
+
+  const modOver=lastRes.ou25, modUnder=1-lastRes.ou25;
+
+  let fOver=PESO_MODELO*modOver+PESO_MERCADO*mktOver;
+  let fUnder=PESO_MODELO*modUnder+PESO_MERCADO*mktUnder;
+  const ftot=fOver+fUnder;
+  fOver/=ftot;fUnder/=ftot;
+
+  document.getElementById('ou-bayes-pover').textContent=(fOver*100).toFixed(1)+'%';
+  document.getElementById('ou-bayes-punder').textContent=(fUnder*100).toFixed(1)+'%';
+
+  const edgeOver=(fOver*qOver-1)*100;
+  const edgeUnder=(fUnder*qUnder-1)*100;
+  const fmtEdge=(e)=>{
+    const sign=e>=0?'+':'';
+    const color=e>=0?'var(--green)':'var(--muted)';
+    return `<span style="color:${color}">edge: ${sign}${e.toFixed(1)}%</span>`;
+  };
+  document.getElementById('ou-bayes-edgeOver').innerHTML=fmtEdge(edgeOver);
+  document.getElementById('ou-bayes-edgeUnder').innerHTML=fmtEdge(edgeUnder);
+
+  document.getElementById('ou-bayes-result').style.display='block';
 }
 
 // ═══════════════════════════════════════════════════════
