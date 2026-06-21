@@ -224,12 +224,14 @@ select:focus{outline:none;border-color:var(--blue)}
     <div class="ia-output" id="ia-output"></div>
   </div>
 
-  <!-- CUOTAS BAYESIANAS — PUNTO 6 -->
+  <!-- CUOTAS BAYESIANAS — PUNTO 6 + AUTO-FETCH PUNTO 19 -->
   <div id="bayes-wrap" style="display:none" class="card">
     <div class="card-title">📊 CUOTAS BAYESIANAS · MODELO 70% + MERCADO 30%</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-      Introduce la cuota real de tu casa de apuestas para ver la probabilidad ajustada con la señal del mercado.
+      Cuotas reales vía The Odds API, o introdúcelas a mano si el partido aún no está en el mercado.
     </div>
+    <button class="btn" style="margin-bottom:10px" onclick="autoFetchCuotas()">🔄 Buscar cuotas reales</button>
+    <div id="odds-estado" style="font-size:10px;margin-bottom:10px;display:none"></div>
     <div class="select-row">
       <div class="select-wrap">
         <label>CUOTA LOCAL <span id="bayes-lbl-local"></span></label>
@@ -1469,6 +1471,123 @@ function calcularOUBayes(){
   document.getElementById('ou-bayes-edgeUnder').innerHTML=fmtEdge(edgeUnder);
 
   document.getElementById('ou-bayes-result').style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 19 — THE ODDS API + EDGE AUTOMÁTICO + MOVIMIENTOS DE LÍNEA
+// Sustituye los campos manuales de cuota (puntos 6 y 17) por cuotas
+// reales obtenidas vía proxy. Cuando hay varias consultas de la
+// misma cuota en momentos distintos, se guarda un histórico simple
+// para detectar movimiento de línea (apertura vs última consulta) —
+// señal de "dinero inteligente" entrando al mercado.
+// ═══════════════════════════════════════════════════════
+let movimientosLinea={}; // {partidoKey: {primera:{q1,qe,q2,ts}, ultima:{...}}}
+try{
+  const ml=localStorage.getItem('movimientos_linea_v1');
+  if(ml)movimientosLinea=JSON.parse(ml);
+}catch(e){}
+
+function partidoKey(local,visit){return LIGA+'|'+local+'|'+visit;}
+
+function guardarMovimiento(local,visit,q1,qe,q2){
+  const key=partidoKey(local,visit);
+  const ahora={q1,qe,q2,ts:Date.now()};
+  if(!movimientosLinea[key]){
+    movimientosLinea[key]={primera:ahora,ultima:ahora};
+  }else{
+    movimientosLinea[key].ultima=ahora;
+  }
+  try{localStorage.setItem('movimientos_linea_v1',JSON.stringify(movimientosLinea));}catch(e){}
+}
+
+function getMovimiento(local,visit){
+  const key=partidoKey(local,visit);
+  const m=movimientosLinea[key];
+  if(!m)return null;
+  const cambioQ1=m.ultima.q1-m.primera.q1;
+  if(Math.abs(cambioQ1)<0.02)return null; // sin cambio relevante
+  return {
+    cambioQ1:parseFloat(cambioQ1.toFixed(2)),
+    bajada:cambioQ1<0 // cuota local bajando = más dinero entrando al local
+  };
+}
+
+async function autoFetchCuotas(){
+  if(!lastRes)return;
+  const estado=document.getElementById('odds-estado');
+  if(estado){estado.style.display='block';estado.innerHTML='<span style="color:var(--muted)">Buscando cuotas reales...</span>';}
+
+  try{
+    const r=await fetch('/.netlify/functions/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
+    const data=await r.json();
+    if(!Array.isArray(data)||!data.length){
+      if(estado)estado.innerHTML='<span style="color:var(--muted)">Sin cuotas disponibles para este partido todavía (normal si faltan días)</span>';
+      return;
+    }
+
+    // Buscar el partido que coincide con el seleccionado
+    const partido=data.find(p=>
+      p.home_team&&p.away_team&&
+      (p.home_team.includes(lastRes.local.split(' ').pop())||lastRes.local.includes(p.home_team.split(' ').pop()))&&
+      (p.away_team.includes(lastRes.visit.split(' ').pop())||lastRes.visit.includes(p.away_team.split(' ').pop()))
+    );
+
+    if(!partido||!partido.bookmakers||!partido.bookmakers.length){
+      if(estado)estado.innerHTML='<span style="color:var(--muted)">Partido no encontrado en el mercado todavía</span>';
+      return;
+    }
+
+    // Promediar cuotas h2h de todas las casas disponibles
+    const h2hMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='h2h')).filter(Boolean);
+    if(h2hMarkets.length){
+      const avg=(outcomeName)=>{
+        const vals=h2hMarkets.map(m=>{
+          const o=m.outcomes.find(out=>out.name===outcomeName||out.name===partido.home_team||out.name===partido.away_team||out.name==='Draw');
+          return o?o.price:null;
+        }).filter(v=>v!==null);
+        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      };
+      const q1=avg(partido.home_team);
+      const qe=avg('Draw');
+      const q2=avg(partido.away_team);
+
+      if(q1&&qe&&q2){
+        document.getElementById('bayes-q1').value=q1.toFixed(2);
+        document.getElementById('bayes-qe').value=qe.toFixed(2);
+        document.getElementById('bayes-q2').value=q2.toFixed(2);
+        calcularBayes();
+        guardarMovimiento(lastRes.local,lastRes.visit,q1,qe,q2);
+      }
+    }
+
+    // Over/Under 2.5
+    const totalsMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='totals')).filter(Boolean);
+    const ou25=totalsMarkets.map(m=>m.outcomes.filter(o=>o.point===2.5)).flat();
+    if(ou25.length){
+      const over=ou25.filter(o=>o.name==='Over').map(o=>o.price);
+      const under=ou25.filter(o=>o.name==='Under').map(o=>o.price);
+      if(over.length&&under.length){
+        const qOver=over.reduce((a,b)=>a+b,0)/over.length;
+        const qUnder=under.reduce((a,b)=>a+b,0)/under.length;
+        document.getElementById('ou-bayes-over').value=qOver.toFixed(2);
+        document.getElementById('ou-bayes-under').value=qUnder.toFixed(2);
+        calcularOUBayes();
+      }
+    }
+
+    // Mostrar movimiento de línea si lo hay
+    const mov=getMovimiento(lastRes.local,lastRes.visit);
+    if(estado){
+      if(mov){
+        const dir=mov.bajada?'bajando hacia el local (dinero entrando)':'subiendo (mercado dudando del local)';
+        estado.innerHTML=`<span style="color:var(--yellow)">⚡ Movimiento de línea: cuota local ${dir} (${mov.cambioQ1>0?'+':''}${mov.cambioQ1})</span>`;
+      }else{
+        estado.innerHTML='<span style="color:var(--green)">✅ Cuotas reales cargadas</span>';
+      }
+    }
+  }catch(e){
+    if(estado)estado.innerHTML='<span style="color:var(--red)">Error al consultar el proxy de cuotas</span>';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
