@@ -712,6 +712,34 @@ function factorShotStopping(nombre){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 16 — VOLATILIDAD / FRAGILIDAD POR EQUIPO
+// Calcula la dispersión real (varianza/media de goles) de cada
+// equipo a partir de su historial real de partidos, SUSTITUYENDO
+// el valor genérico DISP_DEFAULT del punto 4 (pendiente de
+// calibración real, ver documento maestro). Equipos con varianza
+// real alta (resultados muy irregulares) → dispersión alta →
+// Negative Binomial captura mejor su impredecibilidad. Equipos
+// consistentes → dispersión baja → casi Poisson puro.
+// Necesita al menos 5 partidos en el historial; si no, se usa el
+// valor estático del equipo (s.disp) o DISP_DEFAULT como antes.
+// ═══════════════════════════════════════════════════════
+const VOLATILIDAD_MIN_PARTIDOS=5;
+
+function dispEquipo(nombre,datosBase){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre);
+  if(partidos.length<VOLATILIDAD_MIN_PARTIDOS)return (datosBase&&datosBase.disp)||DISP_DEFAULT;
+
+  const goles=partidos.map(p=>p.local===nombre?p.gl:p.gv);
+  const media=goles.reduce((a,b)=>a+b,0)/goles.length;
+  if(media<=0)return DISP_DEFAULT;
+  const varianza=goles.reduce((a,b)=>a+Math.pow(b-media,2),0)/goles.length;
+
+  if(varianza<=media)return 1.0; // sin sobredispersión real, casi Poisson puro
+  return parseFloat((varianza/media).toFixed(3));
+}
+
+// ═══════════════════════════════════════════════════════
 // PUNTO 11 — FACTOR MOTIVACIÓN
 // Ajusta el rendimiento esperado según la posición en la tabla y
 // la fase de la temporada. Solo se activa en las últimas 10 jornadas
@@ -845,8 +873,10 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*f1);
   const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*f2);
 
-  const disp1=s1.disp||DISP_DEFAULT;
-  const disp2=s2.disp||DISP_DEFAULT;
+  // PUNTO 16 — Volatilidad: dispersión calculada con datos reales del historial
+  // (sustituye el valor genérico DISP_DEFAULT cuando hay suficientes partidos)
+  const disp1=dispEquipo(local,s1);
+  const disp2=dispEquipo(visit,s2);
 
   let p1=0,pe=0,p2=0;
   const marc=[];
