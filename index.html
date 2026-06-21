@@ -559,13 +559,60 @@ function actualizarELO(local,visit,golesLocal,golesVisit){
   eloAjustes[LIGA][visit]=prevVisit-delta;
 
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+
+  // Registro en el historial compartido (sirve para SOS y futuro registro de predicciones)
+  registrarPartido(local,visit,golesLocal,golesVisit,elo1,elo2);
+
   return{delta:delta.toFixed(1),eloP:(eloP*100).toFixed(1)};
 }
 
 function resetELO(){
   eloAjustes[LIGA]={};
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+  historialPartidos[LIGA]=[];
+  try{localStorage.setItem('historial_partidos_v1',JSON.stringify(historialPartidos));}catch(e){}
   fillClasificacion();
+}
+
+// ═══════════════════════════════════════════════════════
+// HISTORIAL DE PARTIDOS — infraestructura compartida
+// Guarda cada resultado introducido manualmente con el ELO de
+// ambos equipos en el momento de jugarse. Sirve de base para el
+// punto 12 (SOS) y se reutilizará para el punto 26C (registro de
+// predicciones) sin tener que crear una segunda estructura de datos.
+// ═══════════════════════════════════════════════════════
+let historialPartidos={laliga:[],segunda:[]};
+try{
+  const h=localStorage.getItem('historial_partidos_v1');
+  if(h)historialPartidos=JSON.parse(h);
+}catch(e){}
+
+function registrarPartido(local,visit,gl,gv,eloLocal,eloVisit){
+  if(!historialPartidos[LIGA])historialPartidos[LIGA]=[];
+  historialPartidos[LIGA].push({local,visit,gl,gv,eloLocal,eloVisit,ts:Date.now()});
+  try{localStorage.setItem('historial_partidos_v1',JSON.stringify(historialPartidos));}catch(e){}
+}
+
+// PUNTO 12 — SOS (Strength of Schedule)
+// Compara el ELO medio de los últimos 5 rivales de un equipo con
+// el ELO medio de la liga. Si ha jugado contra rivales flojos,
+// se penaliza ligeramente su xG (su buena racha pesa menos); si
+// ha jugado contra rivales fuertes, se premia ligeramente.
+const SOS_VENTANA=5;
+function factorSOS(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidosEquipo=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-SOS_VENTANA);
+  if(partidosEquipo.length<3)return 1.0; // muestra insuficiente, sin ajuste todavía
+
+  const eloRivales=partidosEquipo.map(p=>p.local===nombre?p.eloVisit:p.eloLocal);
+  const mediaRivales=eloRivales.reduce((a,b)=>a+b,0)/eloRivales.length;
+
+  const mediaLiga=Object.values(EQUIPOS).reduce((a,d)=>a+d.elo,0)/Object.keys(EQUIPOS).length;
+  const diff=mediaRivales-mediaLiga;
+
+  // Escala conservadora: ±150 puntos ELO de diferencia -> ±3% en xG
+  const factor=1+Math.max(-0.05,Math.min(0.05,diff/3000));
+  return parseFloat(factor.toFixed(3));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -681,9 +728,13 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const motiv1=factorMotivacion(local);
   const motiv2=factorMotivacion(visit);
 
+  // PUNTO 12 — SOS: ajusta según calidad de rivales recientes
+  const sos1=factorSOS(local);
+  const sos2=factorSOS(visit);
+
   // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*f2);
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*f1);
+  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*f2);
 
   const disp1=s1.disp||DISP_DEFAULT;
   const disp2=s2.disp||DISP_DEFAULT;
