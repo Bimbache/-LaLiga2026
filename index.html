@@ -676,6 +676,42 @@ function intensidadShock(nombre){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 15 — FINISHING + SHOT STOPPING
+// Reutiliza el historial de partidos (punto 12). Compara los goles
+// REALES marcados/encajados en los últimos 5 partidos con el valor
+// base estático atk/def del equipo (nunca modificado por otros
+// factores dinámicos, evita retroalimentación circular).
+// Finishing >1 = mete más de lo esperado (buen finalizador)
+// ShotStopping >1 = encaja más de lo esperado (defensa/portero flojo)
+// ═══════════════════════════════════════════════════════
+const FS_VENTANA=5;
+const FS_MIN=0.92, FS_MAX=1.08; // tope conservador ±8%
+
+function factorFinishing(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
+  if(partidos.length<3)return 1.0;
+  const golesReales=partidos.map(p=>p.local===nombre?p.gl:p.gv);
+  const avgGoles=golesReales.reduce((a,b)=>a+b,0)/golesReales.length;
+  const atkBase=EQUIPOS[nombre]&&EQUIPOS[nombre].atk;
+  if(!atkBase||atkBase<=0)return 1.0;
+  const ratio=avgGoles/atkBase;
+  return parseFloat(Math.max(FS_MIN,Math.min(FS_MAX,ratio)).toFixed(3));
+}
+
+function factorShotStopping(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
+  if(partidos.length<3)return 1.0;
+  const golesEncajados=partidos.map(p=>p.local===nombre?p.gv:p.gl);
+  const avgEncajados=golesEncajados.reduce((a,b)=>a+b,0)/golesEncajados.length;
+  const defBase=EQUIPOS[nombre]&&EQUIPOS[nombre].def;
+  if(!defBase||defBase<=0)return 1.0;
+  const ratio=avgEncajados/defBase;
+  return parseFloat(Math.max(FS_MIN,Math.min(FS_MAX,ratio)).toFixed(3));
+}
+
+// ═══════════════════════════════════════════════════════
 // PUNTO 11 — FACTOR MOTIVACIÓN
 // Ajusta el rendimiento esperado según la posición en la tabla y
 // la fase de la temporada. Solo se activa en las últimas 10 jornadas
@@ -799,9 +835,15 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const sos1=factorSOS(local);
   const sos2=factorSOS(visit);
 
+  // PUNTO 15 — Finishing (ataque propio) + Shot Stopping (defensa rival)
+  const finishing1=factorFinishing(local);
+  const finishing2=factorFinishing(visit);
+  const shotStop1=factorShotStopping(local); // afecta al lambda del RIVAL (visit)
+  const shotStop2=factorShotStopping(visit); // afecta al lambda del RIVAL (local)
+
   // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*f2);
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*f1);
+  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*f2);
 
   const disp1=s1.disp||DISP_DEFAULT;
   const disp2=s2.disp||DISP_DEFAULT;
