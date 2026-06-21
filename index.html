@@ -360,6 +360,29 @@ select:focus{outline:none;border-color:var(--blue)}
   </div>
 
   <div class="card">
+    <div class="card-title">⚡ SHOCK FACTOR · CAMBIO ESTRUCTURAL</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Marca un equipo si cambia de entrenador, ficha una estrella o vende un jugador clave. Su forma reciente se diluye durante 5 jornadas.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>EQUIPO</label>
+        <select id="shock-equipo"></select>
+      </div>
+      <div class="select-wrap">
+        <label>TIPO</label>
+        <select id="shock-tipo" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <option value="entrenador">Nuevo entrenador</option>
+          <option value="fichaje">Fichaje estrella</option>
+          <option value="venta">Venta jugador clave</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="aplicarShock()">⚡ Marcar shock</button>
+    <div id="shock-lista" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📝 ELO DINÁMICO · INTRODUCIR RESULTADO</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
@@ -616,6 +639,43 @@ function factorSOS(nombre){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 13 — SHOCK FACTOR
+// Cuando un equipo cambia de entrenador, ficha una estrella o
+// vende un jugador clave, su forma histórica reciente deja de ser
+// fiable. Durante las siguientes SHOCK_VENTANA jornadas, el peso
+// de la 'forma' en el cálculo de lambda se reduce gradualmente
+// hacia un valor neutro (0.5) en vez de confiar plenamente en
+// datos que ya no reflejan al equipo actual. Decae linealmente
+// hasta desaparecer del todo tras la ventana.
+// ═══════════════════════════════════════════════════════
+const SHOCK_VENTANA=5; // jornadas de efecto
+let shocksActivos={laliga:{},segunda:{}};
+try{
+  const sh=localStorage.getItem('shocks_activos_v1');
+  if(sh)shocksActivos=JSON.parse(sh);
+}catch(e){}
+
+function marcarShock(nombre,tipo){
+  if(!shocksActivos[LIGA])shocksActivos[LIGA]={};
+  shocksActivos[LIGA][nombre]={tipo,jornadaInicio:getJornadaActual()};
+  try{localStorage.setItem('shocks_activos_v1',JSON.stringify(shocksActivos));}catch(e){}
+}
+
+function quitarShock(nombre){
+  if(shocksActivos[LIGA])delete shocksActivos[LIGA][nombre];
+  try{localStorage.setItem('shocks_activos_v1',JSON.stringify(shocksActivos));}catch(e){}
+}
+
+// Devuelve intensidad 0-1 (1=shock recién ocurrido, 0=ya decaído del todo)
+function intensidadShock(nombre){
+  const s=shocksActivos[LIGA]&&shocksActivos[LIGA][nombre];
+  if(!s)return 0;
+  const transcurridas=getJornadaActual()-s.jornadaInicio;
+  if(transcurridas>=SHOCK_VENTANA||transcurridas<0)return 0;
+  return 1-(transcurridas/SHOCK_VENTANA);
+}
+
+// ═══════════════════════════════════════════════════════
 // PUNTO 11 — FACTOR MOTIVACIÓN
 // Ajusta el rendimiento esperado según la posición en la tabla y
 // la fase de la temporada. Solo se activa en las últimas 10 jornadas
@@ -718,8 +778,15 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const eloDiff=elo1-elo2;
   const eloP=1/(1+Math.pow(10,-eloDiff/400));
 
-  const forma1=s1.forma*0.40+s1.fw*0.60;
-  const forma2=s2.forma*0.40+s2.fw*0.60;
+  let forma1=s1.forma*0.40+s1.fw*0.60;
+  let forma2=s2.forma*0.40+s2.fw*0.60;
+
+  // PUNTO 13 — Shock factor: si hay un shock reciente, la forma se diluye
+  // hacia un valor neutro (0.5) en proporción a la intensidad del shock
+  const shock1=intensidadShock(local);
+  const shock2=intensidadShock(visit);
+  if(shock1>0)forma1=forma1*(1-shock1)+0.5*shock1;
+  if(shock2>0)forma2=forma2*(1-shock2)+0.5*shock2;
 
   // PUNTO 10 — Localía específica por equipo (sustituye el *1.1 genérico anterior)
   const localia1=s1.localia||1.10;
@@ -875,11 +942,55 @@ function actualizarEstadoJornada(){
   }else{
     estado.innerHTML=`<span style="color:var(--yellow)">⚡ Recta final — motivación activa (${restantes} jornadas restantes)</span>`;
   }
+  fillShockUI();
+}
+
+// ─── Panel Shock Factor ───
+function fillShockUI(){
+  const sel=document.getElementById('shock-equipo');
+  if(!sel)return;
+  const equipos=Object.keys(EQUIPOS).sort();
+  const prev=sel.value;
+  sel.innerHTML=equipos.map(e=>`<option value="${e}">${e}</option>`).join('');
+  if(prev&&equipos.includes(prev))sel.value=prev;
+  renderShockLista();
+}
+
+const SHOCK_LABELS={entrenador:'🔄 Nuevo entrenador',fichaje:'⭐ Fichaje estrella',venta:'📤 Venta clave'};
+
+function aplicarShock(){
+  const equipo=document.getElementById('shock-equipo').value;
+  const tipo=document.getElementById('shock-tipo').value;
+  marcarShock(equipo,tipo);
+  renderShockLista();
+}
+
+function renderShockLista(){
+  const cont=document.getElementById('shock-lista');
+  if(!cont)return;
+  const activos=shocksActivos[LIGA]||{};
+  const entradas=Object.entries(activos).filter(([nombre])=>intensidadShock(nombre)>0);
+  if(!entradas.length){
+    cont.innerHTML='<div style="font-size:10px;color:var(--muted)">Sin shocks activos</div>';
+    return;
+  }
+  cont.innerHTML=entradas.map(([nombre,s])=>{
+    const intensidad=intensidadShock(nombre);
+    const pct=Math.round(intensidad*100);
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px">
+      <div>
+        <div style="font-size:10px;font-weight:600">${nombre}</div>
+        <div style="font-size:9px;color:var(--yellow)">${SHOCK_LABELS[s.tipo]} · efecto ${pct}%</div>
+      </div>
+      <button class="combinada-remove" onclick="quitarShock('${nombre}');renderShockLista()">✕</button>
+    </div>`;
+  }).join('');
 }
 
 function onResultadoSelectChange(){
   document.getElementById('res-feedback').style.display='none';
 }
+
 
 function aplicarResultado(){
   const local=document.getElementById('res-local').value;
