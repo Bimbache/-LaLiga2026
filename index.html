@@ -450,6 +450,23 @@ select:focus{outline:none;border-color:var(--blue)}
     </div>
     <button class="btn" onclick="aplicarResultado()">⚡ Actualizar ELO</button>
     <div id="res-feedback" style="display:none;margin-top:8px;font-size:10px;text-align:center"></div>
+
+    <!-- PUNTO 25 — CLV: cuota de cierre opcional al registrar resultado -->
+    <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:6px">CLV · CUOTA DE CIERRE (OPCIONAL)</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:8px;line-height:1.5">Introduce la cuota final del mercado justo antes del partido para calcular el Closing Line Value.</div>
+      <div class="select-row" style="margin-bottom:0">
+        <div class="select-wrap">
+          <label>CIERRE LOCAL</label>
+          <input type="number" step="0.01" min="1.01" id="clv-q1" placeholder="ej. 1.82" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+        <div class="select-wrap">
+          <label>CIERRE OVER 2.5</label>
+          <input type="number" step="0.01" min="1.01" id="clv-qou" placeholder="ej. 1.78" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+      </div>
+    </div>
+
     <button class="btn btn-secondary" style="margin-top:6px;font-size:10px" onclick="if(confirm('¿Resetear todos los ajustes de ELO de esta liga?'))resetELO()">Resetear ELO a valores base</button>
   </div>
 
@@ -479,8 +496,19 @@ select:focus{outline:none;border-color:var(--blue)}
     </div>
     <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="if(confirm('¿Borrar todo el registro de predicciones?'))limpiarPredLog()">Limpiar registro</button>
   </div>
-</div>
 
+  <!-- PUNTO 25 — MÉTRICAS DE EVALUACIÓN -->
+  <div class="card">
+    <div class="card-title">📈 MÉTRICAS DE EVALUACIÓN · LOG LOSS · BRIER · CLV</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Requiere predicciones con resultado real registrado. Log Loss y Brier Score miden calibración probabilística. CLV mide si el modelo detecta value antes que el mercado.
+    </div>
+    <div id="metricas-content">
+      <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin datos suficientes aún — necesitas al menos 5 predicciones con resultado real</div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="calcularMetricas()">🔄 Recalcular métricas</button>
+  </div>
+</div>
 <!-- TOP 3 -->
 <div class="section" id="section-top3">
   <div class="card">
@@ -1174,6 +1202,7 @@ function setLiga(liga){
   fillClasificacion();
   combos=[];renderCombos();
   renderPredLog();
+  calcularMetricas();
 }
 
 function showTab(t){
@@ -1978,6 +2007,18 @@ function registrarResultadoEnLog(local,visit,gl,gv){
   pred.aciertoOU25=(predOU===ou25Real);
   pred.tsResultado=Date.now();
 
+  // PUNTO 25 — CLV: guardar cuotas de cierre si se introdujeron
+  const clvQ1=parseFloat(document.getElementById('clv-q1')?.value);
+  const clvQou=parseFloat(document.getElementById('clv-qou')?.value);
+  if(clvQ1>1.01)pred.clvQ1=clvQ1;
+  if(clvQou>1.01)pred.clvQou=clvQou;
+
+  // Limpiar campos CLV tras guardar
+  const elClvQ1=document.getElementById('clv-q1');
+  const elClvQou=document.getElementById('clv-qou');
+  if(elClvQ1)elClvQ1.value='';
+  if(elClvQou)elClvQou.value='';
+
   try{localStorage.setItem('pred_log_v1',JSON.stringify(predLog));}catch(e){}
   renderPredLog();
 }
@@ -2049,11 +2090,177 @@ function renderPredLog(){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 25 — LOG LOSS + BRIER SCORE + CLV + BACKTESTING POR MÓDULOS
+// Log Loss: penaliza predicciones muy seguras que fallan más que
+// las inciertas. Brier Score: mide calibración probabilística
+// general (0=perfecto, 1=pésimo). CLV: compara cuota estimada
+// por el modelo vs cuota de cierre del mercado — si es positivo
+// de forma consistente, el modelo detecta value antes que el mercado,
+// independientemente de los resultados a corto plazo.
+// ═══════════════════════════════════════════════════════
+
+function calcularMetricas(){
+  const datos=(predLog[LIGA]||[]).filter(p=>p.resultado!==null);
+  const cont=document.getElementById('metricas-content');
+  if(!cont)return;
+
+  if(datos.length<5){
+    cont.innerHTML='<div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin datos suficientes aún — necesitas al menos 5 predicciones con resultado real</div>';
+    return;
+  }
+
+  // ── LOG LOSS 1X2 ──────────────────────────────────────
+  // LL = -1/N * Σ log(p_resultado_real)
+  // Clamp para evitar log(0): mínimo 0.01
+  let logLossSum=0;
+  let brierSum=0;
+  let logLossOU=0;
+  let brierSumOU=0;
+
+  let clvTotal=0, clvCount=0;
+  let clvOUTotal=0, clvOUCount=0;
+
+  datos.forEach(p=>{
+    const p1=p.p1/100, pe=p.pe/100, p2=p.p2/100;
+    const pOU=p.ou25/100, pU=1-pOU;
+
+    // Log Loss 1X2
+    const probReal1X2=p.resultado==='1'?p1:p.resultado==='X'?pe:p2;
+    logLossSum+=-Math.log(Math.max(0.01,probReal1X2));
+
+    // Brier Score 1X2 (suma de cuadrados sobre los 3 outcomes)
+    const r1=p.resultado==='1'?1:0;
+    const re=p.resultado==='X'?1:0;
+    const r2=p.resultado==='2'?1:0;
+    brierSum+=Math.pow(p1-r1,2)+Math.pow(pe-re,2)+Math.pow(p2-r2,2);
+
+    // Log Loss O/U 2.5
+    const totalGoles=(p.gl||0)+(p.gv||0);
+    const esOver=totalGoles>2.5;
+    const probRealOU=esOver?pOU:pU;
+    logLossOU+=-Math.log(Math.max(0.01,probRealOU));
+
+    // Brier Score O/U
+    const rOver=esOver?1:0;
+    brierSumOU+=Math.pow(pOU-rOver,2)+Math.pow(pU-(1-rOver),2);
+
+    // CLV 1X2 (si tiene cuota de cierre registrada)
+    if(p.clvQ1&&p.clvQ1>1.01){
+      // Cuota justa del modelo para el resultado ganador
+      const cuotaModelo=p.resultado==='1'?(100/p.p1):p.resultado==='X'?(100/p.pe):(100/p.p2);
+      const cuotaCierre=p.resultado==='1'?p.clvQ1:p.resultado==='X'?(p.clvQe||p.clvQ1):p.clvQ2||p.clvQ1;
+      // CLV% = (cuota_modelo / cuota_cierre - 1) * 100
+      clvTotal+=(cuotaModelo/cuotaCierre-1)*100;
+      clvCount++;
+    }
+
+    // CLV O/U
+    if(p.clvQou&&p.clvQou>1.01){
+      const cuotaModeloOU=100/p.ou25;
+      clvOUTotal+=(cuotaModeloOU/p.clvQou-1)*100;
+      clvOUCount++;
+    }
+  });
+
+  const n=datos.length;
+  const logLoss=(logLossSum/n).toFixed(3);
+  const brier=(brierSum/n).toFixed(3);
+  const logLossOUval=(logLossOU/n).toFixed(3);
+  const brierOUval=(brierSumOU/n).toFixed(3);
+
+  // Interpretación Log Loss: <0.8 excelente, 0.8-1.0 bueno, >1.0 mejorable
+  const llColor=parseFloat(logLoss)<0.8?'var(--green)':parseFloat(logLoss)<1.0?'var(--yellow)':'var(--red)';
+  const llLabel=parseFloat(logLoss)<0.8?'Excelente':parseFloat(logLoss)<1.0?'Bueno':'Mejorable';
+
+  // Interpretación Brier: <0.20 excelente, 0.20-0.25 bueno, >0.25 mejorable
+  const brierColor=parseFloat(brier)<0.20?'var(--green)':parseFloat(brier)<0.25?'var(--yellow)':'var(--red)';
+  const brierLabel=parseFloat(brier)<0.20?'Excelente':parseFloat(brier)<0.25?'Bueno':'Mejorable';
+
+  // CLV
+  const clvMedio=clvCount>0?(clvTotal/clvCount).toFixed(1):null;
+  const clvOUMedio=clvOUCount>0?(clvOUTotal/clvOUCount).toFixed(1):null;
+  const clvColor=clvMedio&&parseFloat(clvMedio)>0?'var(--green)':'var(--red)';
+  const clvOUColor=clvOUMedio&&parseFloat(clvOUMedio)>0?'var(--green)':'var(--red)';
+
+  // ── BACKTESTING POR MÓDULOS ───────────────────────────
+  // Estimación del impacto de cada módulo sobre el Log Loss
+  // comparando predicciones donde el factor era activo vs neutro.
+  // Con pocos datos es orientativo; con 50+ partidos es fiable.
+  const conELO=datos.filter(p=>p.eloAjuste&&Math.abs(p.eloAjuste)>5);
+  const sinELO=datos.filter(p=>!p.eloAjuste||Math.abs(p.eloAjuste)<=5);
+
+  let modulosHTML='';
+  if(datos.length>=10){
+    const llConELO=conELO.length?(-conELO.reduce((s,p)=>{
+      const prob=p.resultado==='1'?p.p1/100:p.resultado==='X'?p.pe/100:p.p2/100;
+      return s+Math.log(Math.max(0.01,prob));
+    },0)/conELO.length).toFixed(3):'--';
+    const llSinELO=sinELO.length?(-sinELO.reduce((s,p)=>{
+      const prob=p.resultado==='1'?p.p1/100:p.resultado==='X'?p.pe/100:p.p2/100;
+      return s+Math.log(Math.max(0.01,prob));
+    },0)/sinELO.length).toFixed(3):'--';
+
+    modulosHTML=`
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:6px">BACKTESTING POR MÓDULOS (Log Loss)</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:6px">Con ELO ajustado (>${conELO.length} partidos): <strong style="color:var(--blue)">${llConELO}</strong></div>
+        <div style="font-size:9px;color:var(--muted)">Sin ELO ajustado (${sinELO.length} partidos): <strong style="color:var(--blue)">${llSinELO}</strong></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">Necesitas 50+ partidos para resultados fiables por módulo</div>
+      </div>`;
+  }
+
+  cont.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:4px">LOG LOSS 1X2</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Oswald',sans-serif;color:${llColor}">${logLoss}</div>
+        <div style="font-size:9px;color:${llColor};margin-top:2px">${llLabel}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:4px">BRIER SCORE 1X2</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Oswald',sans-serif;color:${brierColor}">${brier}</div>
+        <div style="font-size:9px;color:${brierColor};margin-top:2px">${brierLabel}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:4px">LOG LOSS O/U 2.5</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--blue)">${logLossOUval}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:4px">BRIER SCORE O/U</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--blue)">${brierOUval}</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;margin-bottom:8px">
+      <div style="font-size:9px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:6px">CLOSING LINE VALUE (CLV)</div>
+      ${clvMedio!==null
+        ?`<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;color:var(--muted)">CLV medio 1X2 (${clvCount} partidos)</span>
+            <span style="font-size:12px;font-weight:700;color:${clvColor}">${parseFloat(clvMedio)>0?'+':''}${clvMedio}%</span>
+          </div>`
+        :'<div style="font-size:9px;color:var(--muted)">Sin cuotas de cierre 1X2 registradas aún</div>'}
+      ${clvOUMedio!==null
+        ?`<div style="display:flex;justify-content:space-between">
+            <span style="font-size:10px;color:var(--muted)">CLV medio O/U 2.5 (${clvOUCount} partidos)</span>
+            <span style="font-size:12px;font-weight:700;color:${clvOUColor}">${parseFloat(clvOUMedio)>0?'+':''}${clvOUMedio}%</span>
+          </div>`
+        :'<div style="font-size:9px;color:var(--muted);margin-top:4px">Sin cuotas de cierre O/U registradas aún — introdúcelas en el panel CLV al registrar resultados</div>'}
+    </div>
+
+    <div style="font-size:9px;color:var(--muted);line-height:1.5">
+      Basado en <strong style="color:var(--text)">${n} predicciones</strong> con resultado real.
+      CLV positivo = modelo detecta value antes que el mercado (señal de modelo sólido independientemente de resultados).
+    </div>
+    ${modulosHTML}`;
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 fillSelects();
 fillClasificacion();
 renderPredLog();
+calcularMetricas();
 </script>
 
 <!-- PROXY FUNCTIONS NEEDED: netlify/functions/claude.js -->
