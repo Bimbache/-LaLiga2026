@@ -467,7 +467,7 @@ select:focus{outline:none;border-color:var(--blue)}
       </div>
     </div>
 
-    <button class="btn btn-secondary" style="margin-top:6px;font-size:10px" onclick="if(confirm('¿Resetear todos los ajustes de ELO de esta liga?'))resetELO()">Resetear ELO a valores base</button>
+    <button class="btn btn-secondary" style="margin-top:6px;font-size:10px" onclick="resetELO()">Resetear ELO a valores base</button>
   </div>
 
   <div class="card">
@@ -494,7 +494,7 @@ select:focus{outline:none;border-color:var(--blue)}
     <div id="predlog-list">
       <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin predicciones registradas aún — calcula un partido para empezar</div>
     </div>
-    <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="if(confirm('¿Borrar todo el registro de predicciones?'))limpiarPredLog()">Limpiar registro</button>
+    <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="limpiarPredLog()">Limpiar registro</button>
   </div>
 
   <!-- PUNTO 25 — MÉTRICAS DE EVALUACIÓN -->
