@@ -594,23 +594,10 @@ let lastRes = null;
 let comboLastRes = null;
 
 // ═══════════════════════════════════════════════════════
-// PUNTO 7 — ELO DINÁMICO POR JORNADA
-// ELO_nuevo = ELO_actual + K × (resultado_real - resultado_esperado)
-// Se guarda como AJUSTE (delta) sobre el ELO base, persistido en
-// localStorage. Fuente del resultado: campo manual (ver documento
-// maestro punto 7 — pendiente automatizar con API de resultados).
-//
-// PUNTO 9 — REGRESIÓN A LA MEDIA
-// Antes de sumar el nuevo delta, el ajuste acumulado existente se
-// multiplica por REGRESION_FACTOR (<1). Esto hace que desviaciones
-// grandes respecto al nivel base (rachas muy buenas/malas) se atenúen
-// con el tiempo de forma proporcional — exactamente el comportamiento
-// de "regresión a la media": cuanto más lejos del promedio, más tira
-// hacia él en cada partido. Sin esto, una racha de suerte se acumularía
-// sin límite en el ELO efectivo.
+// PUNTO 7 — ELO DINÁMICO + PUNTO 9 — REGRESIÓN A LA MEDIA
 // ═══════════════════════════════════════════════════════
 const ELO_K=24;
-const REGRESION_FACTOR=0.90; // cada partido, el ajuste acumulado se atenúa un 10%
+const REGRESION_FACTOR=0.90;
 let eloAjustes={laliga:{},segunda:{}};
 try{
   const guardado=localStorage.getItem('elo_ajustes_v1');
@@ -626,22 +613,18 @@ function actualizarELO(local,visit,golesLocal,golesVisit){
   const s1=EQUIPOS[local],s2=EQUIPOS[visit];
   if(!s1||!s2)return false;
   const elo1=eloEfectivo(local,s1),elo2=eloEfectivo(visit,s2);
-  const eloP=1/(1+Math.pow(10,-(elo1-elo2)/400)); // resultado esperado local
+  const eloP=1/(1+Math.pow(10,-(elo1-elo2)/400));
   const real=golesLocal>golesVisit?1:golesLocal===golesVisit?0.5:0;
   const delta=ELO_K*(real-eloP);
 
   if(!eloAjustes[LIGA])eloAjustes[LIGA]={};
-  // Regresión a la media: el ajuste previo se atenúa antes de sumar el nuevo delta
   const prevLocal=(eloAjustes[LIGA][local]||0)*REGRESION_FACTOR;
   const prevVisit=(eloAjustes[LIGA][visit]||0)*REGRESION_FACTOR;
   eloAjustes[LIGA][local]=prevLocal+delta;
   eloAjustes[LIGA][visit]=prevVisit-delta;
 
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
-
-  // Registro en el historial compartido (sirve para SOS y futuro registro de predicciones)
   registrarPartido(local,visit,golesLocal,golesVisit,elo1,elo2);
-
   return{delta:delta.toFixed(1),eloP:(eloP*100).toFixed(1)};
 }
 
@@ -654,11 +637,7 @@ function resetELO(){
 }
 
 // ═══════════════════════════════════════════════════════
-// HISTORIAL DE PARTIDOS — infraestructura compartida
-// Guarda cada resultado introducido manualmente con el ELO de
-// ambos equipos en el momento de jugarse. Sirve de base para el
-// punto 12 (SOS) y se reutilizará para el punto 26C (registro de
-// predicciones) sin tener que crear una segunda estructura de datos.
+// HISTORIAL DE PARTIDOS
 // ═══════════════════════════════════════════════════════
 let historialPartidos={laliga:[],segunda:[]};
 try{
@@ -672,39 +651,22 @@ function registrarPartido(local,visit,gl,gv,eloLocal,eloVisit){
   try{localStorage.setItem('historial_partidos_v1',JSON.stringify(historialPartidos));}catch(e){}
 }
 
-// PUNTO 12 — SOS (Strength of Schedule)
-// Compara el ELO medio de los últimos 5 rivales de un equipo con
-// el ELO medio de la liga. Si ha jugado contra rivales flojos,
-// se penaliza ligeramente su xG (su buena racha pesa menos); si
-// ha jugado contra rivales fuertes, se premia ligeramente.
+// PUNTO 12 — SOS
 const SOS_VENTANA=5;
 function factorSOS(nombre){
   const hist=historialPartidos[LIGA]||[];
   const partidosEquipo=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-SOS_VENTANA);
-  if(partidosEquipo.length<3)return 1.0; // muestra insuficiente, sin ajuste todavía
-
+  if(partidosEquipo.length<3)return 1.0;
   const eloRivales=partidosEquipo.map(p=>p.local===nombre?p.eloVisit:p.eloLocal);
   const mediaRivales=eloRivales.reduce((a,b)=>a+b,0)/eloRivales.length;
-
   const mediaLiga=Object.values(EQUIPOS).reduce((a,d)=>a+d.elo,0)/Object.keys(EQUIPOS).length;
   const diff=mediaRivales-mediaLiga;
-
-  // Escala conservadora: ±150 puntos ELO de diferencia -> ±3% en xG
   const factor=1+Math.max(-0.05,Math.min(0.05,diff/3000));
   return parseFloat(factor.toFixed(3));
 }
 
-// ═══════════════════════════════════════════════════════
 // PUNTO 13 — SHOCK FACTOR
-// Cuando un equipo cambia de entrenador, ficha una estrella o
-// vende un jugador clave, su forma histórica reciente deja de ser
-// fiable. Durante las siguientes SHOCK_VENTANA jornadas, el peso
-// de la 'forma' en el cálculo de lambda se reduce gradualmente
-// hacia un valor neutro (0.5) en vez de confiar plenamente en
-// datos que ya no reflejan al equipo actual. Decae linealmente
-// hasta desaparecer del todo tras la ventana.
-// ═══════════════════════════════════════════════════════
-const SHOCK_VENTANA=5; // jornadas de efecto
+const SHOCK_VENTANA=5;
 let shocksActivos={laliga:{},segunda:{}};
 try{
   const sh=localStorage.getItem('shocks_activos_v1');
@@ -722,7 +684,6 @@ function quitarShock(nombre){
   try{localStorage.setItem('shocks_activos_v1',JSON.stringify(shocksActivos));}catch(e){}
 }
 
-// Devuelve intensidad 0-1 (1=shock recién ocurrido, 0=ya decaído del todo)
 function intensidadShock(nombre){
   const s=shocksActivos[LIGA]&&shocksActivos[LIGA][nombre];
   if(!s)return 0;
@@ -731,17 +692,9 @@ function intensidadShock(nombre){
   return 1-(transcurridas/SHOCK_VENTANA);
 }
 
-// ═══════════════════════════════════════════════════════
 // PUNTO 15 — FINISHING + SHOT STOPPING
-// Reutiliza el historial de partidos (punto 12). Compara los goles
-// REALES marcados/encajados en los últimos 5 partidos con el valor
-// base estático atk/def del equipo (nunca modificado por otros
-// factores dinámicos, evita retroalimentación circular).
-// Finishing >1 = mete más de lo esperado (buen finalizador)
-// ShotStopping >1 = encaja más de lo esperado (defensa/portero flojo)
-// ═══════════════════════════════════════════════════════
 const FS_VENTANA=5;
-const FS_MIN=0.92, FS_MAX=1.08; // tope conservador ±8%
+const FS_MIN=0.92, FS_MAX=1.08;
 
 function factorFinishing(nombre){
   const hist=historialPartidos[LIGA]||[];
@@ -767,42 +720,22 @@ function factorShotStopping(nombre){
   return parseFloat(Math.max(FS_MIN,Math.min(FS_MAX,ratio)).toFixed(3));
 }
 
-// ═══════════════════════════════════════════════════════
-// PUNTO 16 — VOLATILIDAD / FRAGILIDAD POR EQUIPO
-// Calcula la dispersión real (varianza/media de goles) de cada
-// equipo a partir de su historial real de partidos, SUSTITUYENDO
-// el valor genérico DISP_DEFAULT del punto 4 (pendiente de
-// calibración real, ver documento maestro). Equipos con varianza
-// real alta (resultados muy irregulares) → dispersión alta →
-// Negative Binomial captura mejor su impredecibilidad. Equipos
-// consistentes → dispersión baja → casi Poisson puro.
-// Necesita al menos 5 partidos en el historial; si no, se usa el
-// valor estático del equipo (s.disp) o DISP_DEFAULT como antes.
-// ═══════════════════════════════════════════════════════
+// PUNTO 16 — VOLATILIDAD
 const VOLATILIDAD_MIN_PARTIDOS=5;
 
 function dispEquipo(nombre,datosBase){
   const hist=historialPartidos[LIGA]||[];
   const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre);
   if(partidos.length<VOLATILIDAD_MIN_PARTIDOS)return (datosBase&&datosBase.disp)||DISP_DEFAULT;
-
   const goles=partidos.map(p=>p.local===nombre?p.gl:p.gv);
   const media=goles.reduce((a,b)=>a+b,0)/goles.length;
   if(media<=0)return DISP_DEFAULT;
   const varianza=goles.reduce((a,b)=>a+Math.pow(b-media,2),0)/goles.length;
-
-  if(varianza<=media)return 1.0; // sin sobredispersión real, casi Poisson puro
+  if(varianza<=media)return 1.0;
   return parseFloat((varianza/media).toFixed(3));
 }
 
-// ═══════════════════════════════════════════════════════
 // PUNTO 11 — FACTOR MOTIVACIÓN
-// Ajusta el rendimiento esperado según la posición en la tabla y
-// la fase de la temporada. Solo se activa en las últimas 10 jornadas
-// (cuando de verdad aprieta la tabla) para Champions (top 4) y
-// descenso (últimos 3) — el resto de la temporada el factor es
-// neutro (1.0) porque la presión real aún no existe.
-// ═══════════════════════════════════════════════════════
 let jornadaActual={laliga:1,segunda:1};
 try{
   const g=localStorage.getItem('jornada_actual_v1');
@@ -820,7 +753,7 @@ function getPosicionTabla(nombre){
     .map(([n,d])=>[n,eloEfectivo(n,d)])
     .sort((a,b)=>b[1]-a[1])
     .map(([n])=>n);
-  return ranking.indexOf(nombre)+1; // 1-based
+  return ranking.indexOf(nombre)+1;
 }
 
 function factorMotivacion(nombre){
@@ -828,17 +761,16 @@ function factorMotivacion(nombre){
   const totalJornadas=LIGA==='laliga'?38:42;
   const jornada=getJornadaActual();
   const restantes=totalJornadas-jornada;
-  if(restantes>10)return 1.0; // fuera de la recta final, sin presión especial todavía
-
+  if(restantes>10)return 1.0;
   const pos=getPosicionTabla(nombre);
   const enDescenso=pos>total-3;
   const enChampions=pos<=4;
-  if(enDescenso||enChampions)return 1.04; // se juegan algo importante
-  return 0.97; // mitad de tabla sin nada en juego, posible relajación
+  if(enDescenso||enChampions)return 1.04;
+  return 0.97;
 }
 
 // ═══════════════════════════════════════════════════════
-// MODELO DIXON-COLES + NEGATIVE BINOMIAL (analítico, sin simulación)
+// MODELO DIXON-COLES + NEGATIVE BINOMIAL
 // ═══════════════════════════════════════════════════════
 function poisson(l,k){
   if(l<=0)return k===0?1:0;
@@ -852,13 +784,6 @@ function tau(g1,g2,l1,l2,rho=-0.13){
   return 1;
 }
 
-// PUNTO 4 — Negative Binomial: misma idea que Poisson pero permite
-// varianza > media (equipos irregulares). Se calcula con fórmula
-// cerrada (log-gamma), NO con simulación. Ver documento maestro sección 0.
-// disp = ratio varianza/media histórico del equipo (φ). φ=1 → Poisson puro.
-// φ>1 → más irregular. PROVISIONAL: sin datos históricos propios todavía,
-// se usa un valor por defecto razonable (DISP_DEFAULT) hasta calibrar con
-// varianza real de goles por equipo (pendiente API histórica).
 const DISP_DEFAULT = 1.15;
 
 function logGamma(x){
@@ -872,13 +797,12 @@ function logGamma(x){
   return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
 }
 function rFromDisp(lambda,disp){
-  if(!disp||disp<=1.001)return 9999; // ≈ Poisson puro
+  if(!disp||disp<=1.001)return 9999;
   return Math.max(1,lambda/(disp-1));
 }
 function negBinom(mean,k,r){
-  // Parametrización media-dispersión: Var = mean + mean²/r
   if(mean<=0)return k===0?1:0;
-  if(r>=9999)return poisson(mean,k); // sin sobre-dispersión real → Poisson
+  if(r>=9999)return poisson(mean,k);
   const p=r/(r+mean);
   const logP=logGamma(k+r)-logGamma(r)-logGamma(k+1)+r*Math.log(p)+k*Math.log(1-p);
   return Math.max(0,Math.exp(logP));
@@ -901,36 +825,24 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   let forma1=s1.forma*0.40+s1.fw*0.60;
   let forma2=s2.forma*0.40+s2.fw*0.60;
 
-  // PUNTO 13 — Shock factor: si hay un shock reciente, la forma se diluye
-  // hacia un valor neutro (0.5) en proporción a la intensidad del shock
   const shock1=intensidadShock(local);
   const shock2=intensidadShock(visit);
   if(shock1>0)forma1=forma1*(1-shock1)+0.5*shock1;
   if(shock2>0)forma2=forma2*(1-shock2)+0.5*shock2;
 
-  // PUNTO 10 — Localía específica por equipo (sustituye el *1.1 genérico anterior)
   const localia1=s1.localia||1.10;
-
-  // PUNTO 11 — Factor motivación (Champions/descenso en recta final)
   const motiv1=factorMotivacion(local);
   const motiv2=factorMotivacion(visit);
-
-  // PUNTO 12 — SOS: ajusta según calidad de rivales recientes
   const sos1=factorSOS(local);
   const sos2=factorSOS(visit);
-
-  // PUNTO 15 — Finishing (ataque propio) + Shot Stopping (defensa rival)
   const finishing1=factorFinishing(local);
   const finishing2=factorFinishing(visit);
-  const shotStop1=factorShotStopping(local); // afecta al lambda del RIVAL (visit)
-  const shotStop2=factorShotStopping(visit); // afecta al lambda del RIVAL (local)
+  const shotStop1=factorShotStopping(local);
+  const shotStop2=factorShotStopping(visit);
 
-  // Ratings ofensivos/defensivos separados
   const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*f1);
   const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*f2);
 
-  // PUNTO 16 — Volatilidad: dispersión calculada con datos reales del historial
-  // (sustituye el valor genérico DISP_DEFAULT cuando hay suficientes partidos)
   const disp1=dispEquipo(local,s1);
   const disp2=dispEquipo(visit,s2);
 
@@ -944,7 +856,6 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const tot=p1+pe+p2||1;
   marc.sort((a,b)=>b.p-a.p);
 
-  // Over/Under
   let ou05=0,ou15=0,ou25=0,ou35=0,ou45=0;
   let btts=0;
   for(let g1=0;g1<=8;g1++)for(let g2=0;g2<=8;g2++){
@@ -954,7 +865,6 @@ function calcular(local,visit,f1=1.0,f2=1.0){
     if(g1>0&&g2>0)btts+=p;
   }
 
-  // Mitades (aprox)
   const l1h=l1*0.45,l2h=l2*0.45;
   const l1s=l1*0.55,l2s=l2*0.55;
   const ou05h=1-Math.exp(-(l1h+l2h));
@@ -980,6 +890,82 @@ function calcular(local,visit,f1=1.0,f2=1.0){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 24 — ÍNDICE DE CERTEZA CON EDGE INTEGRADO
+// El semáforo base sigue dependiendo de la diferencia ELO
+// (conf). Cuando hay cuotas reales introducidas, se ajusta
+// con el edge de mercado:
+//   · Edge positivo en algún mercado → +3 a +5 puntos
+//     (el mercado confirma el value)
+//   · Edge negativo en todos → -4 a -8 puntos
+//     (la casa ya lo tiene descontado, señal de cautela)
+//   · Sin cuotas → sin ajuste, comportamiento anterior
+// El ajuste es aditivo sobre la certeza base, con topes
+// para no distorsionar el rango global (35-95).
+// ═══════════════════════════════════════════════════════
+function ajusteCertezaEdge(){
+  // Leer edges de cuotas bayesianas 1X2 si están disponibles
+  const q1=parseFloat(document.getElementById('bayes-q1').value);
+  const qe=parseFloat(document.getElementById('bayes-qe').value);
+  const q2=parseFloat(document.getElementById('bayes-q2').value);
+  const qOver=parseFloat(document.getElementById('ou-bayes-over').value);
+  const qUnder=parseFloat(document.getElementById('ou-bayes-under').value);
+
+  if(!lastRes)return {ajuste:0,fuente:'sin datos'};
+
+  // Sin cuotas introducidas → sin ajuste
+  const hay1X2 = q1>1.01 && qe>1.01 && q2>1.01;
+  const hayOU  = qOver>1.01 && qUnder>1.01;
+  if(!hay1X2 && !hayOU) return {ajuste:0,fuente:null};
+
+  const edges=[];
+
+  if(hay1X2){
+    const imp1=1/q1,impe=1/qe,imp2=1/q2;
+    const tot=imp1+impe+imp2;
+    const mkt1=imp1/tot,mkte=impe/tot,mkt2=imp2/tot;
+    const mod1=lastRes.p1/100,mode=lastRes.pe/100,mod2=lastRes.p2/100;
+    let f1=PESO_MODELO*mod1+PESO_MERCADO*mkt1;
+    let fe=PESO_MODELO*mode+PESO_MERCADO*mkte;
+    let f2=PESO_MODELO*mod2+PESO_MERCADO*mkt2;
+    const ftot=f1+fe+f2;
+    f1/=ftot;fe/=ftot;f2/=ftot;
+    edges.push(f1*q1-1, fe*qe-1, f2*q2-1);
+  }
+
+  if(hayOU){
+    const impO=1/qOver,impU=1/qUnder;
+    const tot=impO+impU;
+    const mktO=impO/tot,mktU=impU/tot;
+    let fO=PESO_MODELO*lastRes.ou25+PESO_MERCADO*mktO;
+    let fU=PESO_MODELO*(1-lastRes.ou25)+PESO_MERCADO*mktU;
+    const ftot=fO+fU;
+    fO/=ftot;fU/=ftot;
+    edges.push(fO*qOver-1, fU*qUnder-1);
+  }
+
+  const maxEdge=Math.max(...edges);
+  const todosNegativos=edges.every(e=>e<0);
+
+  let ajuste=0;
+  let fuente='';
+
+  if(todosNegativos){
+    // Todos los mercados sin value: penalizar certeza
+    const peorEdge=Math.min(...edges);
+    ajuste=Math.max(-8,Math.round(peorEdge*40)); // escala: -20% edge → -8 pts
+    fuente='⚠️ Mercado sin value — casa ventajosa';
+  } else if(maxEdge>0.03){
+    // Hay value claro en algún mercado: premio
+    ajuste=Math.min(5,Math.round(maxEdge*50)); // escala: +10% edge → +5 pts
+    fuente='✅ Edge positivo en mercado';
+  } else {
+    fuente='Mercado alineado con modelo';
+  }
+
+  return {ajuste,fuente};
+}
+
+// ═══════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════
 function q(p){return p>0?(100/p).toFixed(2):'--'}
@@ -998,7 +984,6 @@ function fillSelects(){
     if(prev&&equipos.includes(prev))el.value=prev;
     else el.value=equipos[0];
   });
-  // Visitante diferente al local
   const loc=document.getElementById('sel-local').value;
   const vis=document.getElementById('sel-visit');
   if(vis.value===loc)vis.value=Object.keys(EQUIPOS).find(e=>e!==loc);
@@ -1027,7 +1012,6 @@ function fillClasificacion(){
   fillResultadoSelects();
 }
 
-// ─── Panel de resultados manuales (ELO dinámico) ───
 function fillResultadoSelects(){
   const equipos=Object.keys(EQUIPOS).sort();
   ['res-local','res-visit'].forEach(id=>{
@@ -1057,7 +1041,7 @@ function onJornadaChange(){
   if(isNaN(v))return;
   setJornadaActual(v);
   actualizarEstadoJornada();
-  if(lastRes)mostrarResultado(); // refrescar si hay partido seleccionado
+  if(lastRes)mostrarResultado();
 }
 
 function actualizarEstadoJornada(){
@@ -1073,7 +1057,6 @@ function actualizarEstadoJornada(){
   fillShockUI();
 }
 
-// ─── Panel Shock Factor ───
 function fillShockUI(){
   const sel=document.getElementById('shock-equipo');
   if(!sel)return;
@@ -1104,11 +1087,11 @@ function renderShockLista(){
   }
   cont.innerHTML=entradas.map(([nombre,s])=>{
     const intensidad=intensidadShock(nombre);
-    const pct=Math.round(intensidad*100);
+    const p=Math.round(intensidad*100);
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px">
       <div>
         <div style="font-size:10px;font-weight:600">${nombre}</div>
-        <div style="font-size:9px;color:var(--yellow)">${SHOCK_LABELS[s.tipo]} · efecto ${pct}%</div>
+        <div style="font-size:9px;color:var(--yellow)">${SHOCK_LABELS[s.tipo]} · efecto ${p}%</div>
       </div>
       <button class="combinada-remove" onclick="quitarShock('${nombre}');renderShockLista()">✕</button>
     </div>`;
@@ -1119,20 +1102,13 @@ function onResultadoSelectChange(){
   document.getElementById('res-feedback').style.display='none';
 }
 
-
 function aplicarResultado(){
   const local=document.getElementById('res-local').value;
   const visit=document.getElementById('res-visit').value;
   const gl=parseInt(document.getElementById('res-gl').value);
   const gv=parseInt(document.getElementById('res-gv').value);
-  if(local===visit){
-    alert('Local y visitante deben ser distintos');
-    return;
-  }
-  if(isNaN(gl)||isNaN(gv)||gl<0||gv<0){
-    alert('Introduce un resultado válido');
-    return;
-  }
+  if(local===visit){alert('Local y visitante deben ser distintos');return;}
+  if(isNaN(gl)||isNaN(gv)||gl<0||gv<0){alert('Introduce un resultado válido');return;}
   const r=actualizarELO(local,visit,gl,gv);
   if(!r)return;
 
@@ -1142,12 +1118,10 @@ function aplicarResultado(){
   fb.style.color='var(--green)';
   fb.style.display='block';
 
-  // Vaciar campos para evitar reaplicar el mismo resultado por error
   document.getElementById('res-gl').value='';
   document.getElementById('res-gv').value='';
 
   fillClasificacion();
-  // Si el partido coincide con el seleccionado en PARTIDO, refrescar
   if(document.getElementById('sel-local').value===local&&document.getElementById('sel-visit').value===visit){
     mostrarResultado();
   }
@@ -1169,9 +1143,6 @@ function showTab(t){
   document.getElementById('section-'+t).classList.add('active');
 }
 
-// ═══════════════════════════════════════════════════════
-// SELECTOR CHANGE
-// ═══════════════════════════════════════════════════════
 function onSelectChange(){
   const local=document.getElementById('sel-local').value;
   const visit=document.getElementById('sel-visit').value;
@@ -1239,10 +1210,17 @@ function mostrarResultado(){
   if(!res)return;
   lastRes={local,visit,...res};
 
-  // Certeza
+  // ── PUNTO 24: certeza base + ajuste edge ──────────────────
   const conf=res.conf;
   const hasBajas=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
-  const certeza=Math.round(conf*(hasBajas?0.92:1.0));
+  let certeza=Math.round(conf*(hasBajas?0.92:1.0));
+
+  // El ajuste de edge se aplica solo si hay cuotas; si no hay todavía
+  // (primera carga del partido), se aplica 0 y se recalcula en
+  // calcularBayes() / calcularOUBayes() cuando el usuario introduce cuotas.
+  const {ajuste:edgeAjuste,fuente:edgeFuente}=ajusteCertezaEdge();
+  certeza=Math.min(95,Math.max(35,certeza+edgeAjuste));
+
   const sem=certeza>=75?{c:'var(--green)',l:'🟢 ALTA',d:'Apostar con convicción'}:
             certeza>=55?{c:'var(--yellow)',l:'🟡 MEDIA',d:'Ser selectivo'}:
             {c:'var(--red)',l:'🔴 BAJA',d:'Evitar o reducir stake'};
@@ -1252,7 +1230,13 @@ function mostrarResultado(){
   document.getElementById('certeza-label').textContent=sem.l;
   document.getElementById('certeza-label').style.color=sem.c;
   document.getElementById('certeza-desc').textContent=sem.d;
-  document.getElementById('certeza-sub').textContent=`Confianza: ${conf}% · ${hasBajas?'⚠️ Bajas activas':'Sin alertas'}`;
+
+  // Sub-texto: muestra la fuente del ajuste edge si la hay
+  let subTxt=`Confianza estadística: ${conf}% · ${hasBajas?'⚠️ Bajas activas':'Sin alertas'}`;
+  if(edgeFuente)subTxt+=` · ${edgeFuente}`;
+  if(edgeAjuste!==0)subTxt+=` (${edgeAjuste>0?'+':''}${edgeAjuste} pts edge)`;
+  document.getElementById('certeza-sub').textContent=subTxt;
+
   document.getElementById('certeza-bar').style.width=certeza+'%';
   document.getElementById('certeza-bar').style.background=sem.c;
   document.getElementById('certeza-card').style.borderColor=sem.c+'40';
@@ -1278,7 +1262,6 @@ function mostrarResultado(){
   document.getElementById('ia-output').style.display='none';
   document.getElementById('ia-output').textContent='';
 
-  // Cuotas bayesianas — punto 6
   document.getElementById('bayes-lbl-local').textContent='('+local+')';
   document.getElementById('bayes-lbl-visit').textContent='('+visit+')';
   document.getElementById('bayes-lbl1').textContent=local.split(' ').pop().toUpperCase();
@@ -1286,13 +1269,11 @@ function mostrarResultado(){
   limpiarBayes();
   document.getElementById('bayes-wrap').style.display='block';
 
-  // Mercados asiáticos / O-U bayesiano — punto 17
   limpiarOUBayes();
   document.getElementById('ou-handicap').textContent=
     (res.handi>0?'+':'')+res.handi+' ('+local.split(' ').pop()+')';
   document.getElementById('ou-bayes-wrap').style.display='block';
 
-  // H2H — punto 8
   document.getElementById('h2h-lbl1').textContent='VICT. '+local.split(' ').pop().toUpperCase();
   document.getElementById('h2h-lbl2').textContent='VICT. '+visit.split(' ').pop().toUpperCase();
   document.getElementById('h2h-rlbl1').textContent=local.split(' ').pop().toUpperCase();
@@ -1333,7 +1314,6 @@ function mostrarResultado(){
     <div class="gol-item"><span class="gol-label">BTTS No</span><span><span class="gol-val" style="color:var(--green)">${pct(bttsNo)} ${icon(bttsNo)}</span> <span style="font-size:9px;color:var(--muted)">cuota: ${q(bttsNo*100)}</span></span></div>
     <div class="gol-item"><span class="gol-label">Handicap</span><span class="gol-val" style="color:var(--blue)">${local.split(' ').pop()} ${res.handi>0?res.handi:'0'}</span></div>`;
 
-  // Top 3
   calcTop3(local,visit,res,certeza);
 }
 
@@ -1352,7 +1332,6 @@ function calcTop3(local,visit,res,certeza){
     {label:'BTTS No',prob:1-res.btts,cuota:parseFloat(q((1-res.btts)*100)),mercado:'Goles'},
   ];
 
-  // Filtrar por probabilidad mínima y ordenar por value estimado
   const filtered=apuestas
     .filter(a=>a.prob>=0.52&&a.cuota>=1.20)
     .map(a=>({...a,value:parseFloat((a.prob*a.cuota-1).toFixed(3))}))
@@ -1377,13 +1356,7 @@ function calcTop3(local,visit,res,certeza){
 }
 
 // ═══════════════════════════════════════════════════════
-// PUNTO 18 — TOP 3 APUESTAS DE LA JORNADA COMPLETA (con value real)
-// Aprovecha que The Odds API devuelve TODOS los partidos de LaLiga
-// listados en una sola llamada (reutiliza el proxy del punto 19).
-// Para cada partido: empareja nombres con EQUIPOS, calcula con
-// Dixon-Coles, mezcla con la cuota real (mismo blend del punto 6),
-// calcula edge real, y ordena TODOS los mercados de TODOS los
-// partidos por edge — solo así "value" es real, no solo probabilidad.
+// PUNTO 18 — TOP 3 JORNADA COMPLETA
 // ═══════════════════════════════════════════════════════
 function normalizar(s){
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -1439,7 +1412,6 @@ async function cargarTop3Jornada(){
         return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
       };
 
-      // 1X2 con blend bayesiano
       const q1=avgOutcome(h2hMarkets,partido.home_team);
       const qe=avgOutcome(h2hMarkets,'Draw');
       const q2=avgOutcome(h2hMarkets,partido.away_team);
@@ -1455,7 +1427,6 @@ async function cargarTop3Jornada(){
         candidatos.push({local,visit,mercado:`${visit} gana`,prob:f2,cuota:q2,edge:f2*q2-1});
       }
 
-      // Over/Under 2.5 con blend bayesiano
       const ou25=totalsMarkets.map(m=>m.outcomes.filter(o=>o.point===2.5)).flat();
       const qOver=avgOutcome([{outcomes:ou25}],'Over');
       const qUnder=avgOutcome([{outcomes:ou25}],'Under');
@@ -1470,7 +1441,6 @@ async function cargarTop3Jornada(){
       }
     }
 
-    // Filtrar solo value real (edge positivo) y probabilidad razonable, ordenar por edge
     const top3=candidatos
       .filter(c=>c.edge>0.03&&c.prob>=0.45)
       .sort((a,b)=>b.edge-a.edge)
@@ -1501,9 +1471,6 @@ async function cargarTop3Jornada(){
 
 // ═══════════════════════════════════════════════════════
 // CUOTAS BAYESIANAS — PUNTO 6
-// Blend: P_final = 0.7 × P_modelo + 0.3 × P_mercado
-// P_mercado se obtiene normalizando las cuotas introducidas
-// (elimina el margen/overround de la casa antes de mezclar).
 // ═══════════════════════════════════════════════════════
 const PESO_MODELO=0.70, PESO_MERCADO=0.30;
 
@@ -1525,17 +1492,11 @@ function calcularBayes(){
     return;
   }
 
-  // Probabilidad implícita de cada cuota (con margen de la casa incluido)
-  const imp1=1/q1, impe=1/qe, imp2=1/q2;
-  const overround=imp1+impe+imp2; // >1 por el margen de la casa
+  const imp1=1/q1,impe=1/qe,imp2=1/q2;
+  const overround=imp1+impe+imp2;
+  const mkt1=imp1/overround,mkte=impe/overround,mkt2=imp2/overround;
+  const mod1=lastRes.p1/100,mode=lastRes.pe/100,mod2=lastRes.p2/100;
 
-  // Normalizar para quitar el margen → probabilidad "limpia" de mercado
-  const mkt1=imp1/overround, mkte=impe/overround, mkt2=imp2/overround;
-
-  // Probabilidad del modelo (0-1)
-  const mod1=lastRes.p1/100, mode=lastRes.pe/100, mod2=lastRes.p2/100;
-
-  // Blend bayesiano 70/30
   let f1=PESO_MODELO*mod1+PESO_MERCADO*mkt1;
   let fe=PESO_MODELO*mode+PESO_MERCADO*mkte;
   let f2=PESO_MODELO*mod2+PESO_MERCADO*mkt2;
@@ -1546,7 +1507,6 @@ function calcularBayes(){
   document.getElementById('bayes-pe').textContent=(fe*100).toFixed(1)+'%';
   document.getElementById('bayes-p2').textContent=(f2*100).toFixed(1)+'%';
 
-  // Edge = (Prob ajustada × Cuota casa) - 1
   const edge1=(f1*q1-1)*100;
   const edgee=(fe*qe-1)*100;
   const edge2=(f2*q2-1)*100;
@@ -1561,14 +1521,13 @@ function calcularBayes(){
   document.getElementById('bayes-edge2').innerHTML=fmtEdge(edge2);
 
   document.getElementById('bayes-result').style.display='block';
+
+  // PUNTO 24: recalcular certeza con edge actualizado
+  actualizarCertezaConEdge();
 }
 
 // ═══════════════════════════════════════════════════════
 // PUNTO 17 — MERCADOS ASIÁTICOS / O-U BAYESIANO
-// Mismo mecanismo del punto 6 (blend 70/30) extendido al mercado
-// de Over/Under 2.5 — el más líquido fuera del 1X2. También se
-// muestra el handicap asiático implícito del modelo (λ1-λ2) como
-// referencia informativa frente a la línea ofrecida por la casa.
 // ═══════════════════════════════════════════════════════
 function limpiarOUBayes(){
   document.getElementById('ou-bayes-over').value='';
@@ -1586,11 +1545,10 @@ function calcularOUBayes(){
     return;
   }
 
-  const impOver=1/qOver, impUnder=1/qUnder;
+  const impOver=1/qOver,impUnder=1/qUnder;
   const overround=impOver+impUnder;
-  const mktOver=impOver/overround, mktUnder=impUnder/overround;
-
-  const modOver=lastRes.ou25, modUnder=1-lastRes.ou25;
+  const mktOver=impOver/overround,mktUnder=impUnder/overround;
+  const modOver=lastRes.ou25,modUnder=1-lastRes.ou25;
 
   let fOver=PESO_MODELO*modOver+PESO_MERCADO*mktOver;
   let fUnder=PESO_MODELO*modUnder+PESO_MERCADO*mktUnder;
@@ -1611,17 +1569,45 @@ function calcularOUBayes(){
   document.getElementById('ou-bayes-edgeUnder').innerHTML=fmtEdge(edgeUnder);
 
   document.getElementById('ou-bayes-result').style.display='block';
+
+  // PUNTO 24: recalcular certeza con edge actualizado
+  actualizarCertezaConEdge();
+}
+
+// PUNTO 24: función auxiliar para actualizar solo el semáforo de certeza
+// sin recalcular todo el partido — se llama desde calcularBayes() y
+// calcularOUBayes() cada vez que el usuario introduce o modifica cuotas.
+function actualizarCertezaConEdge(){
+  if(!lastRes)return;
+  const hasBajas=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
+  let certeza=Math.round(lastRes.conf*(hasBajas?0.92:1.0));
+  const {ajuste,fuente}=ajusteCertezaEdge();
+  certeza=Math.min(95,Math.max(35,certeza+ajuste));
+
+  const sem=certeza>=75?{c:'var(--green)',l:'🟢 ALTA',d:'Apostar con convicción'}:
+            certeza>=55?{c:'var(--yellow)',l:'🟡 MEDIA',d:'Ser selectivo'}:
+            {c:'var(--red)',l:'🔴 BAJA',d:'Evitar o reducir stake'};
+
+  document.getElementById('certeza-num').textContent=certeza;
+  document.getElementById('certeza-num').style.color=sem.c;
+  document.getElementById('certeza-label').textContent=sem.l;
+  document.getElementById('certeza-label').style.color=sem.c;
+  document.getElementById('certeza-desc').textContent=sem.d;
+
+  let subTxt=`Confianza estadística: ${lastRes.conf}% · ${hasBajas?'⚠️ Bajas activas':'Sin alertas'}`;
+  if(fuente)subTxt+=` · ${fuente}`;
+  if(ajuste!==0)subTxt+=` (${ajuste>0?'+':''}${ajuste} pts edge)`;
+  document.getElementById('certeza-sub').textContent=subTxt;
+
+  document.getElementById('certeza-bar').style.width=certeza+'%';
+  document.getElementById('certeza-bar').style.background=sem.c;
+  document.getElementById('certeza-card').style.borderColor=sem.c+'40';
 }
 
 // ═══════════════════════════════════════════════════════
-// PUNTO 19 — THE ODDS API + EDGE AUTOMÁTICO + MOVIMIENTOS DE LÍNEA
-// Sustituye los campos manuales de cuota (puntos 6 y 17) por cuotas
-// reales obtenidas vía proxy. Cuando hay varias consultas de la
-// misma cuota en momentos distintos, se guarda un histórico simple
-// para detectar movimiento de línea (apertura vs última consulta) —
-// señal de "dinero inteligente" entrando al mercado.
+// PUNTO 19 — THE ODDS API
 // ═══════════════════════════════════════════════════════
-let movimientosLinea={}; // {partidoKey: {primera:{q1,qe,q2,ts}, ultima:{...}}}
+let movimientosLinea={};
 try{
   const ml=localStorage.getItem('movimientos_linea_v1');
   if(ml)movimientosLinea=JSON.parse(ml);
@@ -1645,11 +1631,8 @@ function getMovimiento(local,visit){
   const m=movimientosLinea[key];
   if(!m)return null;
   const cambioQ1=m.ultima.q1-m.primera.q1;
-  if(Math.abs(cambioQ1)<0.02)return null; // sin cambio relevante
-  return {
-    cambioQ1:parseFloat(cambioQ1.toFixed(2)),
-    bajada:cambioQ1<0 // cuota local bajando = más dinero entrando al local
-  };
+  if(Math.abs(cambioQ1)<0.02)return null;
+  return{cambioQ1:parseFloat(cambioQ1.toFixed(2)),bajada:cambioQ1<0};
 }
 
 async function autoFetchCuotas(){
@@ -1665,7 +1648,6 @@ async function autoFetchCuotas(){
       return;
     }
 
-    // Buscar el partido que coincide con el seleccionado
     const partido=data.find(p=>
       p.home_team&&p.away_team&&
       (p.home_team.includes(lastRes.local.split(' ').pop())||lastRes.local.includes(p.home_team.split(' ').pop()))&&
@@ -1677,7 +1659,6 @@ async function autoFetchCuotas(){
       return;
     }
 
-    // Promediar cuotas h2h de todas las casas disponibles
     const h2hMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='h2h')).filter(Boolean);
     if(h2hMarkets.length){
       const avg=(outcomeName)=>{
@@ -1700,7 +1681,6 @@ async function autoFetchCuotas(){
       }
     }
 
-    // Over/Under 2.5
     const totalsMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='totals')).filter(Boolean);
     const ou25=totalsMarkets.map(m=>m.outcomes.filter(o=>o.point===2.5)).flat();
     if(ou25.length){
@@ -1715,7 +1695,6 @@ async function autoFetchCuotas(){
       }
     }
 
-    // Mostrar movimiento de línea si lo hay
     const mov=getMovimiento(lastRes.local,lastRes.visit);
     if(estado){
       if(mov){
@@ -1732,8 +1711,6 @@ async function autoFetchCuotas(){
 
 // ═══════════════════════════════════════════════════════
 // H2H — PUNTO 8
-// Blend: P_final = 0.85 × P_modelo + 0.15 × P_H2H
-// Peso menor que mercado (15% vs 30%) por ser muestra pequeña (5 partidos)
 // ═══════════════════════════════════════════════════════
 const PESO_H2H=0.15, PESO_MOD_H2H=0.85;
 
@@ -1763,8 +1740,8 @@ function calcularH2H(){
   }
   document.getElementById('h2h-error').style.display='none';
 
-  const h2h1=v1/5, h2he=e/5, h2h2=v2/5;
-  const mod1=lastRes.p1/100, mode=lastRes.pe/100, mod2=lastRes.p2/100;
+  const h2h1=v1/5,h2he=e/5,h2h2=v2/5;
+  const mod1=lastRes.p1/100,mode=lastRes.pe/100,mod2=lastRes.p2/100;
 
   let f1=PESO_MOD_H2H*mod1+PESO_H2H*h2h1;
   let fe=PESO_MOD_H2H*mode+PESO_H2H*h2he;
