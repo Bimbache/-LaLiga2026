@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -225,12 +224,14 @@ select:focus{outline:none;border-color:var(--blue)}
     <div class="ia-output" id="ia-output"></div>
   </div>
 
-  <!-- CUOTAS BAYESIANAS — PUNTO 6 -->
+  <!-- CUOTAS BAYESIANAS — PUNTO 6 + AUTO-FETCH PUNTO 19 -->
   <div id="bayes-wrap" style="display:none" class="card">
     <div class="card-title">📊 CUOTAS BAYESIANAS · MODELO 70% + MERCADO 30%</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-      Introduce la cuota real de tu casa de apuestas para ver la probabilidad ajustada con la señal del mercado.
+      Cuotas reales vía The Odds API, o introdúcelas a mano si el partido aún no está en el mercado.
     </div>
+    <button class="btn" style="margin-bottom:10px" onclick="autoFetchCuotas()">🔄 Buscar cuotas reales</button>
+    <div id="odds-estado" style="font-size:10px;margin-bottom:10px;display:none"></div>
     <div class="select-row">
       <div class="select-wrap">
         <label>CUOTA LOCAL <span id="bayes-lbl-local"></span></label>
@@ -273,6 +274,43 @@ select:focus{outline:none;border-color:var(--blue)}
       <div style="font-size:9px;color:var(--muted);margin-top:6px;line-height:1.5">
         Edge = (Probabilidad modelo × Cuota casa) − 1. Verde = value a favor. Rojo = sin value.
       </div>
+    </div>
+  </div>
+
+  <!-- MERCADOS ASIÁTICOS / O-U BAYESIANO — PUNTO 17 -->
+  <div id="ou-bayes-wrap" style="display:none" class="card">
+    <div class="card-title">⚖️ OVER/UNDER 2.5 · MODELO 70% + MERCADO 30%</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Extiende el mismo mecanismo del punto 6 al mercado de goles más líquido — introduce las cuotas reales de Over/Under 2.5.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>CUOTA OVER 2.5</label>
+        <input type="number" step="0.01" min="1.01" id="ou-bayes-over" placeholder="ej. 1.85" oninput="calcularOUBayes()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+      <div class="select-wrap">
+        <label>CUOTA UNDER 2.5</label>
+        <input type="number" step="0.01" min="1.01" id="ou-bayes-under" placeholder="ej. 1.95" oninput="calcularOUBayes()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+    </div>
+    <button class="btn btn-secondary" style="font-size:10px" onclick="limpiarOUBayes()">Limpiar</button>
+    <div id="ou-bayes-result" style="display:none;margin-top:10px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:8px">PROBABILIDAD AJUSTADA</div>
+      <div class="prob-row">
+        <div class="prob-item">
+          <div class="prob-label">OVER 2.5</div>
+          <div class="prob-value" id="ou-bayes-pover" style="color:var(--red)">--%</div>
+          <div class="prob-cuota" id="ou-bayes-edgeOver">--</div>
+        </div>
+        <div class="prob-item">
+          <div class="prob-label">UNDER 2.5</div>
+          <div class="prob-value" id="ou-bayes-punder" style="color:var(--green)">--%</div>
+          <div class="prob-cuota" id="ou-bayes-edgeUnder">--</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.5">
+      Handicap asiático implícito del modelo: <span id="ou-handicap" style="color:var(--blue);font-weight:600">--</span> (diferencia de goles esperados λ1-λ2; útil para comparar con la línea de hándicap que ofrezca tu casa).
     </div>
   </div>
 
@@ -361,6 +399,29 @@ select:focus{outline:none;border-color:var(--blue)}
   </div>
 
   <div class="card">
+    <div class="card-title">⚡ SHOCK FACTOR · CAMBIO ESTRUCTURAL</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Marca un equipo si cambia de entrenador, ficha una estrella o vende un jugador clave. Su forma reciente se diluye durante 5 jornadas.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>EQUIPO</label>
+        <select id="shock-equipo"></select>
+      </div>
+      <div class="select-wrap">
+        <label>TIPO</label>
+        <select id="shock-tipo" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <option value="entrenador">Nuevo entrenador</option>
+          <option value="fichaje">Fichaje estrella</option>
+          <option value="venta">Venta jugador clave</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="aplicarShock()">⚡ Marcar shock</button>
+    <div id="shock-lista" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📝 ELO DINÁMICO · INTRODUCIR RESULTADO</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
@@ -408,10 +469,27 @@ select:focus{outline:none;border-color:var(--blue)}
 <!-- TOP 3 -->
 <div class="section" id="section-top3">
   <div class="card">
-    <div class="card-title">🎯 TOP 3 APUESTAS · JORNADA</div>
-    <div id="top3-list">
+    <div class="card-title">🎯 TOP 3 APUESTAS · JORNADA COMPLETA</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Analiza todos los partidos de LaLiga listados en el mercado y muestra las 3 apuestas con mayor value real (edge), no solo probabilidad.
+    </div>
+    <button class="btn" onclick="cargarTop3Jornada()">🔄 Analizar jornada completa</button>
+    <div class="loading" id="loading-top3"><div class="spinner"></div>Consultando cuotas de todos los partidos...</div>
+    <div id="top3-list" style="margin-top:10px">
       <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">
-        Selecciona un partido en ⚔️ PARTIDO para calcular las mejores apuestas
+        Pulsa el botón para buscar las mejores apuestas de toda la jornada con cuotas reales
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📌 TOP 3 DEL PARTIDO SELECCIONADO</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Solo del partido activo en ⚔️ PARTIDO, ordenado por probabilidad del modelo (sin cuotas reales).
+    </div>
+    <div id="top3-individual">
+      <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">
+        Selecciona un partido en ⚔️ PARTIDO
       </div>
     </div>
   </div>
@@ -560,13 +638,161 @@ function actualizarELO(local,visit,golesLocal,golesVisit){
   eloAjustes[LIGA][visit]=prevVisit-delta;
 
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+
+  // Registro en el historial compartido (sirve para SOS y futuro registro de predicciones)
+  registrarPartido(local,visit,golesLocal,golesVisit,elo1,elo2);
+
   return{delta:delta.toFixed(1),eloP:(eloP*100).toFixed(1)};
 }
 
 function resetELO(){
   eloAjustes[LIGA]={};
   try{localStorage.setItem('elo_ajustes_v1',JSON.stringify(eloAjustes));}catch(e){}
+  historialPartidos[LIGA]=[];
+  try{localStorage.setItem('historial_partidos_v1',JSON.stringify(historialPartidos));}catch(e){}
   fillClasificacion();
+}
+
+// ═══════════════════════════════════════════════════════
+// HISTORIAL DE PARTIDOS — infraestructura compartida
+// Guarda cada resultado introducido manualmente con el ELO de
+// ambos equipos en el momento de jugarse. Sirve de base para el
+// punto 12 (SOS) y se reutilizará para el punto 26C (registro de
+// predicciones) sin tener que crear una segunda estructura de datos.
+// ═══════════════════════════════════════════════════════
+let historialPartidos={laliga:[],segunda:[]};
+try{
+  const h=localStorage.getItem('historial_partidos_v1');
+  if(h)historialPartidos=JSON.parse(h);
+}catch(e){}
+
+function registrarPartido(local,visit,gl,gv,eloLocal,eloVisit){
+  if(!historialPartidos[LIGA])historialPartidos[LIGA]=[];
+  historialPartidos[LIGA].push({local,visit,gl,gv,eloLocal,eloVisit,ts:Date.now()});
+  try{localStorage.setItem('historial_partidos_v1',JSON.stringify(historialPartidos));}catch(e){}
+}
+
+// PUNTO 12 — SOS (Strength of Schedule)
+// Compara el ELO medio de los últimos 5 rivales de un equipo con
+// el ELO medio de la liga. Si ha jugado contra rivales flojos,
+// se penaliza ligeramente su xG (su buena racha pesa menos); si
+// ha jugado contra rivales fuertes, se premia ligeramente.
+const SOS_VENTANA=5;
+function factorSOS(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidosEquipo=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-SOS_VENTANA);
+  if(partidosEquipo.length<3)return 1.0; // muestra insuficiente, sin ajuste todavía
+
+  const eloRivales=partidosEquipo.map(p=>p.local===nombre?p.eloVisit:p.eloLocal);
+  const mediaRivales=eloRivales.reduce((a,b)=>a+b,0)/eloRivales.length;
+
+  const mediaLiga=Object.values(EQUIPOS).reduce((a,d)=>a+d.elo,0)/Object.keys(EQUIPOS).length;
+  const diff=mediaRivales-mediaLiga;
+
+  // Escala conservadora: ±150 puntos ELO de diferencia -> ±3% en xG
+  const factor=1+Math.max(-0.05,Math.min(0.05,diff/3000));
+  return parseFloat(factor.toFixed(3));
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 13 — SHOCK FACTOR
+// Cuando un equipo cambia de entrenador, ficha una estrella o
+// vende un jugador clave, su forma histórica reciente deja de ser
+// fiable. Durante las siguientes SHOCK_VENTANA jornadas, el peso
+// de la 'forma' en el cálculo de lambda se reduce gradualmente
+// hacia un valor neutro (0.5) en vez de confiar plenamente en
+// datos que ya no reflejan al equipo actual. Decae linealmente
+// hasta desaparecer del todo tras la ventana.
+// ═══════════════════════════════════════════════════════
+const SHOCK_VENTANA=5; // jornadas de efecto
+let shocksActivos={laliga:{},segunda:{}};
+try{
+  const sh=localStorage.getItem('shocks_activos_v1');
+  if(sh)shocksActivos=JSON.parse(sh);
+}catch(e){}
+
+function marcarShock(nombre,tipo){
+  if(!shocksActivos[LIGA])shocksActivos[LIGA]={};
+  shocksActivos[LIGA][nombre]={tipo,jornadaInicio:getJornadaActual()};
+  try{localStorage.setItem('shocks_activos_v1',JSON.stringify(shocksActivos));}catch(e){}
+}
+
+function quitarShock(nombre){
+  if(shocksActivos[LIGA])delete shocksActivos[LIGA][nombre];
+  try{localStorage.setItem('shocks_activos_v1',JSON.stringify(shocksActivos));}catch(e){}
+}
+
+// Devuelve intensidad 0-1 (1=shock recién ocurrido, 0=ya decaído del todo)
+function intensidadShock(nombre){
+  const s=shocksActivos[LIGA]&&shocksActivos[LIGA][nombre];
+  if(!s)return 0;
+  const transcurridas=getJornadaActual()-s.jornadaInicio;
+  if(transcurridas>=SHOCK_VENTANA||transcurridas<0)return 0;
+  return 1-(transcurridas/SHOCK_VENTANA);
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 15 — FINISHING + SHOT STOPPING
+// Reutiliza el historial de partidos (punto 12). Compara los goles
+// REALES marcados/encajados en los últimos 5 partidos con el valor
+// base estático atk/def del equipo (nunca modificado por otros
+// factores dinámicos, evita retroalimentación circular).
+// Finishing >1 = mete más de lo esperado (buen finalizador)
+// ShotStopping >1 = encaja más de lo esperado (defensa/portero flojo)
+// ═══════════════════════════════════════════════════════
+const FS_VENTANA=5;
+const FS_MIN=0.92, FS_MAX=1.08; // tope conservador ±8%
+
+function factorFinishing(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
+  if(partidos.length<3)return 1.0;
+  const golesReales=partidos.map(p=>p.local===nombre?p.gl:p.gv);
+  const avgGoles=golesReales.reduce((a,b)=>a+b,0)/golesReales.length;
+  const atkBase=EQUIPOS[nombre]&&EQUIPOS[nombre].atk;
+  if(!atkBase||atkBase<=0)return 1.0;
+  const ratio=avgGoles/atkBase;
+  return parseFloat(Math.max(FS_MIN,Math.min(FS_MAX,ratio)).toFixed(3));
+}
+
+function factorShotStopping(nombre){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
+  if(partidos.length<3)return 1.0;
+  const golesEncajados=partidos.map(p=>p.local===nombre?p.gv:p.gl);
+  const avgEncajados=golesEncajados.reduce((a,b)=>a+b,0)/golesEncajados.length;
+  const defBase=EQUIPOS[nombre]&&EQUIPOS[nombre].def;
+  if(!defBase||defBase<=0)return 1.0;
+  const ratio=avgEncajados/defBase;
+  return parseFloat(Math.max(FS_MIN,Math.min(FS_MAX,ratio)).toFixed(3));
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 16 — VOLATILIDAD / FRAGILIDAD POR EQUIPO
+// Calcula la dispersión real (varianza/media de goles) de cada
+// equipo a partir de su historial real de partidos, SUSTITUYENDO
+// el valor genérico DISP_DEFAULT del punto 4 (pendiente de
+// calibración real, ver documento maestro). Equipos con varianza
+// real alta (resultados muy irregulares) → dispersión alta →
+// Negative Binomial captura mejor su impredecibilidad. Equipos
+// consistentes → dispersión baja → casi Poisson puro.
+// Necesita al menos 5 partidos en el historial; si no, se usa el
+// valor estático del equipo (s.disp) o DISP_DEFAULT como antes.
+// ═══════════════════════════════════════════════════════
+const VOLATILIDAD_MIN_PARTIDOS=5;
+
+function dispEquipo(nombre,datosBase){
+  const hist=historialPartidos[LIGA]||[];
+  const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre);
+  if(partidos.length<VOLATILIDAD_MIN_PARTIDOS)return (datosBase&&datosBase.disp)||DISP_DEFAULT;
+
+  const goles=partidos.map(p=>p.local===nombre?p.gl:p.gv);
+  const media=goles.reduce((a,b)=>a+b,0)/goles.length;
+  if(media<=0)return DISP_DEFAULT;
+  const varianza=goles.reduce((a,b)=>a+Math.pow(b-media,2),0)/goles.length;
+
+  if(varianza<=media)return 1.0; // sin sobredispersión real, casi Poisson puro
+  return parseFloat((varianza/media).toFixed(3));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -672,8 +898,15 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const eloDiff=elo1-elo2;
   const eloP=1/(1+Math.pow(10,-eloDiff/400));
 
-  const forma1=s1.forma*0.40+s1.fw*0.60;
-  const forma2=s2.forma*0.40+s2.fw*0.60;
+  let forma1=s1.forma*0.40+s1.fw*0.60;
+  let forma2=s2.forma*0.40+s2.fw*0.60;
+
+  // PUNTO 13 — Shock factor: si hay un shock reciente, la forma se diluye
+  // hacia un valor neutro (0.5) en proporción a la intensidad del shock
+  const shock1=intensidadShock(local);
+  const shock2=intensidadShock(visit);
+  if(shock1>0)forma1=forma1*(1-shock1)+0.5*shock1;
+  if(shock2>0)forma2=forma2*(1-shock2)+0.5*shock2;
 
   // PUNTO 10 — Localía específica por equipo (sustituye el *1.1 genérico anterior)
   const localia1=s1.localia||1.10;
@@ -682,12 +915,24 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const motiv1=factorMotivacion(local);
   const motiv2=factorMotivacion(visit);
 
-  // Ratings ofensivos/defensivos separados
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*f2);
+  // PUNTO 12 — SOS: ajusta según calidad de rivales recientes
+  const sos1=factorSOS(local);
+  const sos2=factorSOS(visit);
 
-  const disp1=s1.disp||DISP_DEFAULT;
-  const disp2=s2.disp||DISP_DEFAULT;
+  // PUNTO 15 — Finishing (ataque propio) + Shot Stopping (defensa rival)
+  const finishing1=factorFinishing(local);
+  const finishing2=factorFinishing(visit);
+  const shotStop1=factorShotStopping(local); // afecta al lambda del RIVAL (visit)
+  const shotStop2=factorShotStopping(visit); // afecta al lambda del RIVAL (local)
+
+  // Ratings ofensivos/defensivos separados
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*f1);
+  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*f2);
+
+  // PUNTO 16 — Volatilidad: dispersión calculada con datos reales del historial
+  // (sustituye el valor genérico DISP_DEFAULT cuando hay suficientes partidos)
+  const disp1=dispEquipo(local,s1);
+  const disp2=dispEquipo(visit,s2);
 
   let p1=0,pe=0,p2=0;
   const marc=[];
@@ -825,11 +1070,55 @@ function actualizarEstadoJornada(){
   }else{
     estado.innerHTML=`<span style="color:var(--yellow)">⚡ Recta final — motivación activa (${restantes} jornadas restantes)</span>`;
   }
+  fillShockUI();
+}
+
+// ─── Panel Shock Factor ───
+function fillShockUI(){
+  const sel=document.getElementById('shock-equipo');
+  if(!sel)return;
+  const equipos=Object.keys(EQUIPOS).sort();
+  const prev=sel.value;
+  sel.innerHTML=equipos.map(e=>`<option value="${e}">${e}</option>`).join('');
+  if(prev&&equipos.includes(prev))sel.value=prev;
+  renderShockLista();
+}
+
+const SHOCK_LABELS={entrenador:'🔄 Nuevo entrenador',fichaje:'⭐ Fichaje estrella',venta:'📤 Venta clave'};
+
+function aplicarShock(){
+  const equipo=document.getElementById('shock-equipo').value;
+  const tipo=document.getElementById('shock-tipo').value;
+  marcarShock(equipo,tipo);
+  renderShockLista();
+}
+
+function renderShockLista(){
+  const cont=document.getElementById('shock-lista');
+  if(!cont)return;
+  const activos=shocksActivos[LIGA]||{};
+  const entradas=Object.entries(activos).filter(([nombre])=>intensidadShock(nombre)>0);
+  if(!entradas.length){
+    cont.innerHTML='<div style="font-size:10px;color:var(--muted)">Sin shocks activos</div>';
+    return;
+  }
+  cont.innerHTML=entradas.map(([nombre,s])=>{
+    const intensidad=intensidadShock(nombre);
+    const pct=Math.round(intensidad*100);
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px">
+      <div>
+        <div style="font-size:10px;font-weight:600">${nombre}</div>
+        <div style="font-size:9px;color:var(--yellow)">${SHOCK_LABELS[s.tipo]} · efecto ${pct}%</div>
+      </div>
+      <button class="combinada-remove" onclick="quitarShock('${nombre}');renderShockLista()">✕</button>
+    </div>`;
+  }).join('');
 }
 
 function onResultadoSelectChange(){
   document.getElementById('res-feedback').style.display='none';
 }
+
 
 function aplicarResultado(){
   const local=document.getElementById('res-local').value;
@@ -997,6 +1286,12 @@ function mostrarResultado(){
   limpiarBayes();
   document.getElementById('bayes-wrap').style.display='block';
 
+  // Mercados asiáticos / O-U bayesiano — punto 17
+  limpiarOUBayes();
+  document.getElementById('ou-handicap').textContent=
+    (res.handi>0?'+':'')+res.handi+' ('+local.split(' ').pop()+')';
+  document.getElementById('ou-bayes-wrap').style.display='block';
+
   // H2H — punto 8
   document.getElementById('h2h-lbl1').textContent='VICT. '+local.split(' ').pop().toUpperCase();
   document.getElementById('h2h-lbl2').textContent='VICT. '+visit.split(' ').pop().toUpperCase();
@@ -1064,7 +1359,7 @@ function calcTop3(local,visit,res,certeza){
     .sort((a,b)=>b.prob-a.prob)
     .slice(0,3);
 
-  const list=document.getElementById('top3-list');
+  const list=document.getElementById('top3-individual');
   if(!filtered.length){
     list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">No hay apuestas claras para este partido</div>';
     return;
@@ -1079,6 +1374,129 @@ function calcTop3(local,visit,res,certeza){
         <span>Cuota justa: <strong style="color:var(--blue)">${a.cuota}</strong></span>
       </div>
     </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 18 — TOP 3 APUESTAS DE LA JORNADA COMPLETA (con value real)
+// Aprovecha que The Odds API devuelve TODOS los partidos de LaLiga
+// listados en una sola llamada (reutiliza el proxy del punto 19).
+// Para cada partido: empareja nombres con EQUIPOS, calcula con
+// Dixon-Coles, mezcla con la cuota real (mismo blend del punto 6),
+// calcula edge real, y ordena TODOS los mercados de TODOS los
+// partidos por edge — solo así "value" es real, no solo probabilidad.
+// ═══════════════════════════════════════════════════════
+function normalizar(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+function emparejarEquipo(nombreAPI){
+  const norm=normalizar(nombreAPI);
+  const palabrasIgnorar=['real','club','de','futbol','cf','fc'];
+  const palabrasAPI=norm.split(' ').filter(w=>w.length>2&&!palabrasIgnorar.includes(w));
+
+  let mejorMatch=null,mejorScore=0;
+  for(const equipo of Object.keys(EQUIPOS)){
+    const normEq=normalizar(equipo);
+    const palabrasEq=normEq.split(' ').filter(w=>w.length>2&&!palabrasIgnorar.includes(w));
+    const coincidencias=palabrasAPI.filter(w=>palabrasEq.some(we=>we.includes(w)||w.includes(we))).length;
+    if(coincidencias>mejorScore){mejorScore=coincidencias;mejorMatch=equipo;}
+  }
+  return mejorScore>0?mejorMatch:null;
+}
+
+async function cargarTop3Jornada(){
+  const load=document.getElementById('loading-top3');
+  const list=document.getElementById('top3-list');
+  load.style.display='block';
+  list.innerHTML='';
+
+  try{
+    const r=await fetch('/.netlify/functions/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
+    const data=await r.json();
+
+    if(!Array.isArray(data)||!data.length){
+      list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Sin partidos listados en el mercado todavía (normal si faltan días para que empiece la jornada)</div>';
+      load.style.display='none';
+      return;
+    }
+
+    const candidatos=[];
+
+    for(const partido of data){
+      const local=emparejarEquipo(partido.home_team||'');
+      const visit=emparejarEquipo(partido.away_team||'');
+      if(!local||!visit||local===visit)continue;
+
+      const res=calcular(local,visit);
+      const h2hMarkets=(partido.bookmakers||[]).map(b=>b.markets.find(m=>m.key==='h2h')).filter(Boolean);
+      const totalsMarkets=(partido.bookmakers||[]).map(b=>b.markets.find(m=>m.key==='totals')).filter(Boolean);
+
+      const avgOutcome=(markets,outcomeName)=>{
+        const vals=markets.map(m=>{
+          const o=m.outcomes.find(out=>out.name===outcomeName);
+          return o?o.price:null;
+        }).filter(v=>v!==null);
+        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      };
+
+      // 1X2 con blend bayesiano
+      const q1=avgOutcome(h2hMarkets,partido.home_team);
+      const qe=avgOutcome(h2hMarkets,'Draw');
+      const q2=avgOutcome(h2hMarkets,partido.away_team);
+      if(q1&&qe&&q2){
+        const imp1=1/q1,impe=1/qe,imp2=1/q2;
+        const tot=imp1+impe+imp2;
+        const mkt1=imp1/tot,mkte=impe/tot,mkt2=imp2/tot;
+        const f1=PESO_MODELO*(res.p1/100)+PESO_MERCADO*mkt1;
+        const fe=PESO_MODELO*(res.pe/100)+PESO_MERCADO*mkte;
+        const f2=PESO_MODELO*(res.p2/100)+PESO_MERCADO*mkt2;
+        candidatos.push({local,visit,mercado:`${local} gana`,prob:f1,cuota:q1,edge:f1*q1-1});
+        candidatos.push({local,visit,mercado:`Empate`,prob:fe,cuota:qe,edge:fe*qe-1});
+        candidatos.push({local,visit,mercado:`${visit} gana`,prob:f2,cuota:q2,edge:f2*q2-1});
+      }
+
+      // Over/Under 2.5 con blend bayesiano
+      const ou25=totalsMarkets.map(m=>m.outcomes.filter(o=>o.point===2.5)).flat();
+      const qOver=avgOutcome([{outcomes:ou25}],'Over');
+      const qUnder=avgOutcome([{outcomes:ou25}],'Under');
+      if(qOver&&qUnder){
+        const impO=1/qOver,impU=1/qUnder;
+        const tot=impO+impU;
+        const mktO=impO/tot,mktU=impU/tot;
+        const fO=PESO_MODELO*res.ou25+PESO_MERCADO*mktO;
+        const fU=PESO_MODELO*(1-res.ou25)+PESO_MERCADO*mktU;
+        candidatos.push({local,visit,mercado:'Over 2.5',prob:fO,cuota:qOver,edge:fO*qOver-1});
+        candidatos.push({local,visit,mercado:'Under 2.5',prob:fU,cuota:qUnder,edge:fU*qUnder-1});
+      }
+    }
+
+    // Filtrar solo value real (edge positivo) y probabilidad razonable, ordenar por edge
+    const top3=candidatos
+      .filter(c=>c.edge>0.03&&c.prob>=0.45)
+      .sort((a,b)=>b.edge-a.edge)
+      .slice(0,3);
+
+    load.style.display='none';
+
+    if(!top3.length){
+      list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Sin apuestas con value claro esta jornada (las cuotas del mercado están ajustadas)</div>';
+      return;
+    }
+
+    list.innerHTML=top3.map((c,i)=>`
+      <div class="top3-item" style="border-left-color:${i===0?'var(--green)':i===1?'var(--yellow)':'var(--blue)'}">
+        <div class="top3-partido">${c.local} vs ${c.visit}</div>
+        <div class="top3-mercado">${c.mercado}</div>
+        <div class="top3-stats">
+          <span>Prob: <strong style="color:var(--green)">${pct(c.prob)}</strong></span>
+          <span>Cuota real: <strong style="color:var(--blue)">${c.cuota.toFixed(2)}</strong></span>
+          <span>Edge: <strong style="color:var(--green)">+${(c.edge*100).toFixed(1)}%</strong></span>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    load.style.display='none';
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--red);font-size:11px">Error al consultar el mercado. Verifica que estás en la URL de Netlify, no en un archivo local.</div>';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1143,6 +1561,173 @@ function calcularBayes(){
   document.getElementById('bayes-edge2').innerHTML=fmtEdge(edge2);
 
   document.getElementById('bayes-result').style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 17 — MERCADOS ASIÁTICOS / O-U BAYESIANO
+// Mismo mecanismo del punto 6 (blend 70/30) extendido al mercado
+// de Over/Under 2.5 — el más líquido fuera del 1X2. También se
+// muestra el handicap asiático implícito del modelo (λ1-λ2) como
+// referencia informativa frente a la línea ofrecida por la casa.
+// ═══════════════════════════════════════════════════════
+function limpiarOUBayes(){
+  document.getElementById('ou-bayes-over').value='';
+  document.getElementById('ou-bayes-under').value='';
+  document.getElementById('ou-bayes-result').style.display='none';
+}
+
+function calcularOUBayes(){
+  if(!lastRes)return;
+  const qOver=parseFloat(document.getElementById('ou-bayes-over').value);
+  const qUnder=parseFloat(document.getElementById('ou-bayes-under').value);
+
+  if(!qOver||!qUnder||qOver<1.01||qUnder<1.01){
+    document.getElementById('ou-bayes-result').style.display='none';
+    return;
+  }
+
+  const impOver=1/qOver, impUnder=1/qUnder;
+  const overround=impOver+impUnder;
+  const mktOver=impOver/overround, mktUnder=impUnder/overround;
+
+  const modOver=lastRes.ou25, modUnder=1-lastRes.ou25;
+
+  let fOver=PESO_MODELO*modOver+PESO_MERCADO*mktOver;
+  let fUnder=PESO_MODELO*modUnder+PESO_MERCADO*mktUnder;
+  const ftot=fOver+fUnder;
+  fOver/=ftot;fUnder/=ftot;
+
+  document.getElementById('ou-bayes-pover').textContent=(fOver*100).toFixed(1)+'%';
+  document.getElementById('ou-bayes-punder').textContent=(fUnder*100).toFixed(1)+'%';
+
+  const edgeOver=(fOver*qOver-1)*100;
+  const edgeUnder=(fUnder*qUnder-1)*100;
+  const fmtEdge=(e)=>{
+    const sign=e>=0?'+':'';
+    const color=e>=0?'var(--green)':'var(--muted)';
+    return `<span style="color:${color}">edge: ${sign}${e.toFixed(1)}%</span>`;
+  };
+  document.getElementById('ou-bayes-edgeOver').innerHTML=fmtEdge(edgeOver);
+  document.getElementById('ou-bayes-edgeUnder').innerHTML=fmtEdge(edgeUnder);
+
+  document.getElementById('ou-bayes-result').style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 19 — THE ODDS API + EDGE AUTOMÁTICO + MOVIMIENTOS DE LÍNEA
+// Sustituye los campos manuales de cuota (puntos 6 y 17) por cuotas
+// reales obtenidas vía proxy. Cuando hay varias consultas de la
+// misma cuota en momentos distintos, se guarda un histórico simple
+// para detectar movimiento de línea (apertura vs última consulta) —
+// señal de "dinero inteligente" entrando al mercado.
+// ═══════════════════════════════════════════════════════
+let movimientosLinea={}; // {partidoKey: {primera:{q1,qe,q2,ts}, ultima:{...}}}
+try{
+  const ml=localStorage.getItem('movimientos_linea_v1');
+  if(ml)movimientosLinea=JSON.parse(ml);
+}catch(e){}
+
+function partidoKey(local,visit){return LIGA+'|'+local+'|'+visit;}
+
+function guardarMovimiento(local,visit,q1,qe,q2){
+  const key=partidoKey(local,visit);
+  const ahora={q1,qe,q2,ts:Date.now()};
+  if(!movimientosLinea[key]){
+    movimientosLinea[key]={primera:ahora,ultima:ahora};
+  }else{
+    movimientosLinea[key].ultima=ahora;
+  }
+  try{localStorage.setItem('movimientos_linea_v1',JSON.stringify(movimientosLinea));}catch(e){}
+}
+
+function getMovimiento(local,visit){
+  const key=partidoKey(local,visit);
+  const m=movimientosLinea[key];
+  if(!m)return null;
+  const cambioQ1=m.ultima.q1-m.primera.q1;
+  if(Math.abs(cambioQ1)<0.02)return null; // sin cambio relevante
+  return {
+    cambioQ1:parseFloat(cambioQ1.toFixed(2)),
+    bajada:cambioQ1<0 // cuota local bajando = más dinero entrando al local
+  };
+}
+
+async function autoFetchCuotas(){
+  if(!lastRes)return;
+  const estado=document.getElementById('odds-estado');
+  if(estado){estado.style.display='block';estado.innerHTML='<span style="color:var(--muted)">Buscando cuotas reales...</span>';}
+
+  try{
+    const r=await fetch('/.netlify/functions/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
+    const data=await r.json();
+    if(!Array.isArray(data)||!data.length){
+      if(estado)estado.innerHTML='<span style="color:var(--muted)">Sin cuotas disponibles para este partido todavía (normal si faltan días)</span>';
+      return;
+    }
+
+    // Buscar el partido que coincide con el seleccionado
+    const partido=data.find(p=>
+      p.home_team&&p.away_team&&
+      (p.home_team.includes(lastRes.local.split(' ').pop())||lastRes.local.includes(p.home_team.split(' ').pop()))&&
+      (p.away_team.includes(lastRes.visit.split(' ').pop())||lastRes.visit.includes(p.away_team.split(' ').pop()))
+    );
+
+    if(!partido||!partido.bookmakers||!partido.bookmakers.length){
+      if(estado)estado.innerHTML='<span style="color:var(--muted)">Partido no encontrado en el mercado todavía</span>';
+      return;
+    }
+
+    // Promediar cuotas h2h de todas las casas disponibles
+    const h2hMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='h2h')).filter(Boolean);
+    if(h2hMarkets.length){
+      const avg=(outcomeName)=>{
+        const vals=h2hMarkets.map(m=>{
+          const o=m.outcomes.find(out=>out.name===outcomeName||out.name===partido.home_team||out.name===partido.away_team||out.name==='Draw');
+          return o?o.price:null;
+        }).filter(v=>v!==null);
+        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      };
+      const q1=avg(partido.home_team);
+      const qe=avg('Draw');
+      const q2=avg(partido.away_team);
+
+      if(q1&&qe&&q2){
+        document.getElementById('bayes-q1').value=q1.toFixed(2);
+        document.getElementById('bayes-qe').value=qe.toFixed(2);
+        document.getElementById('bayes-q2').value=q2.toFixed(2);
+        calcularBayes();
+        guardarMovimiento(lastRes.local,lastRes.visit,q1,qe,q2);
+      }
+    }
+
+    // Over/Under 2.5
+    const totalsMarkets=partido.bookmakers.map(b=>b.markets.find(m=>m.key==='totals')).filter(Boolean);
+    const ou25=totalsMarkets.map(m=>m.outcomes.filter(o=>o.point===2.5)).flat();
+    if(ou25.length){
+      const over=ou25.filter(o=>o.name==='Over').map(o=>o.price);
+      const under=ou25.filter(o=>o.name==='Under').map(o=>o.price);
+      if(over.length&&under.length){
+        const qOver=over.reduce((a,b)=>a+b,0)/over.length;
+        const qUnder=under.reduce((a,b)=>a+b,0)/under.length;
+        document.getElementById('ou-bayes-over').value=qOver.toFixed(2);
+        document.getElementById('ou-bayes-under').value=qUnder.toFixed(2);
+        calcularOUBayes();
+      }
+    }
+
+    // Mostrar movimiento de línea si lo hay
+    const mov=getMovimiento(lastRes.local,lastRes.visit);
+    if(estado){
+      if(mov){
+        const dir=mov.bajada?'bajando hacia el local (dinero entrando)':'subiendo (mercado dudando del local)';
+        estado.innerHTML=`<span style="color:var(--yellow)">⚡ Movimiento de línea: cuota local ${dir} (${mov.cambioQ1>0?'+':''}${mov.cambioQ1})</span>`;
+      }else{
+        estado.innerHTML='<span style="color:var(--green)">✅ Cuotas reales cargadas</span>';
+      }
+    }
+  }catch(e){
+    if(estado)estado.innerHTML='<span style="color:var(--red)">Error al consultar el proxy de cuotas</span>';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
