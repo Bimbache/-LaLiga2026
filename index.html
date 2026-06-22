@@ -464,6 +464,19 @@ select:focus{outline:none;border-color:var(--blue)}
       <tbody id="clas-body"></tbody>
     </table>
   </div>
+
+  <!-- PUNTO 26C — REGISTRO DE PREDICCIONES -->
+  <div class="card">
+    <div class="card-title">📋 REGISTRO DE PREDICCIONES · PREDICTION LOG</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Cada partido calculado queda registrado. Al introducir el resultado real con "Actualizar ELO", se marca automáticamente como acierto o fallo. Base de datos para Log Loss y calibración futura (puntos 25 y 27).
+    </div>
+    <div id="predlog-stats" style="display:none;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px"></div>
+    <div id="predlog-list">
+      <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin predicciones registradas aún — calcula un partido para empezar</div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="if(confirm('¿Borrar todo el registro de predicciones?'))limpiarPredLog()">Limpiar registro</button>
+  </div>
 </div>
 
 <!-- TOP 3 -->
@@ -1112,6 +1125,9 @@ function aplicarResultado(){
   const r=actualizarELO(local,visit,gl,gv);
   if(!r)return;
 
+  // PUNTO 26C — emparejar resultado con predicción pendiente
+  registrarResultadoEnLog(local,visit,gl,gv);
+
   const fb=document.getElementById('res-feedback');
   const real=gl>gv?'1':gl===gv?'X':'2';
   fb.innerHTML=`✅ ${local} ${gl}-${gv} ${visit} aplicado. Esperado local: ${r.eloP}% · Resultado real: ${real} · Δ ELO: ${r.delta>0?'+':''}${r.delta}`;
@@ -1135,6 +1151,7 @@ function setLiga(liga){
   fillSelects();
   fillClasificacion();
   combos=[];renderCombos();
+  renderPredLog();
 }
 
 function showTab(t){
@@ -1315,6 +1332,9 @@ function mostrarResultado(){
     <div class="gol-item"><span class="gol-label">Handicap</span><span class="gol-val" style="color:var(--blue)">${local.split(' ').pop()} ${res.handi>0?res.handi:'0'}</span></div>`;
 
   calcTop3(local,visit,res,certeza);
+
+  // PUNTO 26C — guardar predicción en el log
+  guardarPrediccion(local,visit,res);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1871,10 +1891,147 @@ async function analizarCombo(){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 26C — REGISTRO DE PREDICCIONES (PREDICTION LOG)
+// Guarda automáticamente cada predicción calculada. Cuando el
+// usuario introduce el resultado real con "Actualizar ELO", el
+// sistema busca si había una predicción pendiente para ese partido
+// y registra el par (predicción / resultado real). Diseñado para
+// funcionar igual con entrada manual (ahora) o automática vía API
+// (punto 26B) — no requerirá cambios cuando se automatice.
+// Es la base de datos que alimentará Log Loss (punto 25) y la
+// calibración probabilística de Temporada 2 (punto 27).
+// ═══════════════════════════════════════════════════════
+let predLog={laliga:[],segunda:[]};
+try{
+  const pl=localStorage.getItem('pred_log_v1');
+  if(pl)predLog=JSON.parse(pl);
+}catch(e){}
+
+// Clave única por partido: liga|local|visitante (sin timestamp —
+// un mismo partido solo tiene una predicción activa a la vez)
+function predKey(local,visit){return LIGA+'|'+local+'|'+visit;}
+
+// Guardar predicción al calcular un partido. Sobreescribe si ya
+// existía una predicción pendiente del mismo partido (el usuario
+// puede recalcular con distintos parámetros antes del partido).
+function guardarPrediccion(local,visit,res){
+  if(!predLog[LIGA])predLog[LIGA]=[];
+  const key=predKey(local,visit);
+  // Eliminar predicción anterior del mismo partido si existe
+  predLog[LIGA]=predLog[LIGA].filter(p=>p.key!==key||p.resultado!==null);
+  predLog[LIGA].push({
+    key,local,visit,
+    p1:res.p1,pe:res.pe,p2:res.p2,
+    ou25:parseFloat((res.ou25*100).toFixed(1)),
+    btts:parseFloat((res.btts*100).toFixed(1)),
+    l1:res.l1,l2:res.l2,
+    ts:Date.now(),
+    resultado:null, // null = pendiente de resultado real
+    acierto1X2:null,
+    aciertoOU25:null
+  });
+  try{localStorage.setItem('pred_log_v1',JSON.stringify(predLog));}catch(e){}
+  renderPredLog();
+}
+
+// Emparejar resultado real con predicción pendiente.
+// Llamado desde aplicarResultado() tras actualizar el ELO.
+function registrarResultadoEnLog(local,visit,gl,gv){
+  if(!predLog[LIGA])return;
+  const key=predKey(local,visit);
+  const pred=predLog[LIGA].find(p=>p.key===key&&p.resultado===null);
+  if(!pred)return; // sin predicción previa para este partido
+
+  const res1X2=gl>gv?'1':gl===gv?'X':'2';
+  const ou25Real=gl+gv>2.5?'over':'under';
+
+  // Resultado esperado según la predicción del modelo
+  const maxProb=Math.max(pred.p1,pred.pe,pred.p2);
+  const predSigno=maxProb===pred.p1?'1':maxProb===pred.pe?'X':'2';
+  const predOU=pred.ou25>=50?'over':'under';
+
+  pred.resultado=res1X2;
+  pred.gl=gl;pred.gv=gv;
+  pred.acierto1X2=(predSigno===res1X2);
+  pred.aciertoOU25=(predOU===ou25Real);
+  pred.tsResultado=Date.now();
+
+  try{localStorage.setItem('pred_log_v1',JSON.stringify(predLog));}catch(e){}
+  renderPredLog();
+}
+
+function limpiarPredLog(){
+  predLog[LIGA]=[];
+  try{localStorage.setItem('pred_log_v1',JSON.stringify(predLog));}catch(e){}
+  renderPredLog();
+}
+
+function renderPredLog(){
+  const list=document.getElementById('predlog-list');
+  const stats=document.getElementById('predlog-stats');
+  if(!list)return;
+
+  const entradas=(predLog[LIGA]||[]).slice().reverse(); // más reciente primero
+
+  if(!entradas.length){
+    list.innerHTML='<div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin predicciones registradas aún — calcula un partido para empezar</div>';
+    stats.style.display='none';
+    return;
+  }
+
+  // Estadísticas de aciertos
+  const conResultado=entradas.filter(p=>p.resultado!==null);
+  if(conResultado.length){
+    const ac1X2=conResultado.filter(p=>p.acierto1X2).length;
+    const acOU=conResultado.filter(p=>p.aciertoOU25).length;
+    const pct1X2=Math.round(ac1X2/conResultado.length*100);
+    const pctOU=Math.round(acOU/conResultado.length*100);
+    stats.innerHTML=`
+      <span style="color:var(--muted)">Partidos con resultado: <strong style="color:var(--text)">${conResultado.length}</strong></span>
+      &nbsp;·&nbsp;
+      <span style="color:var(--muted)">Signo 1X2: <strong style="color:${pct1X2>=55?'var(--green)':'var(--yellow)'}">${ac1X2}/${conResultado.length} (${pct1X2}%)</strong></span>
+      &nbsp;·&nbsp;
+      <span style="color:var(--muted)">O/U 2.5: <strong style="color:${pctOU>=60?'var(--green)':'var(--yellow)'}">${acOU}/${conResultado.length} (${pctOU}%)</strong></span>`;
+    stats.style.display='block';
+  }else{
+    stats.style.display='none';
+  }
+
+  list.innerHTML=entradas.map(p=>{
+    const fecha=new Date(p.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+    const pendiente=p.resultado===null;
+    const color1X2=pendiente?'var(--muted)':p.acierto1X2?'var(--green)':'var(--red)';
+    const colorOU=pendiente?'var(--muted)':p.aciertoOU25?'var(--green)':'var(--red)';
+    const estado=pendiente
+      ?'<span style="color:var(--yellow);font-size:9px">⏳ Pendiente resultado</span>'
+      :`<span style="font-size:9px">
+          <span style="color:${color1X2}">${p.acierto1X2?'✅':'❌'} 1X2</span>
+          &nbsp;
+          <span style="color:${colorOU}">${p.aciertoOU25?'✅':'❌'} O/U 2.5</span>
+          &nbsp;·&nbsp;
+          <span style="color:var(--muted)">Real: ${p.gl}-${p.gv}</span>
+        </span>`;
+
+    return`<div style="padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px;border-left:3px solid ${pendiente?'var(--yellow)':p.acierto1X2?'var(--green)':'var(--red)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:10px;font-weight:600">${p.local} vs ${p.visit}</span>
+        <span style="font-size:9px;color:var(--muted)">${fecha}</span>
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:3px">
+        Pred: <span style="color:var(--blue)">${p.p1}% · ${p.pe}% · ${p.p2}%</span>
+        &nbsp;·&nbsp; O2.5: <span style="color:var(--blue)">${p.ou25}%</span>
+      </div>
+      ${estado}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 fillSelects();
 fillClasificacion();
+renderPredLog();
 </script>
 
 <!-- PROXY FUNCTIONS NEEDED: netlify/functions/claude.js -->
