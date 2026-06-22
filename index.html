@@ -426,6 +426,8 @@ select:focus{outline:none;border-color:var(--blue)}
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
     </div>
+    <button class="btn btn-secondary" style="margin-bottom:10px;font-size:10px" onclick="usarPartidoActivo()">⚔️ Usar partido activo</button>
+    <div id="partido-activo-hint" style="display:none;font-size:9px;color:var(--blue);margin-bottom:8px;text-align:center"></div>
     <div class="select-row">
       <div class="select-wrap">
         <label>LOCAL</label>
@@ -1113,6 +1115,26 @@ function renderShockLista(){
 
 function onResultadoSelectChange(){
   document.getElementById('res-feedback').style.display='none';
+}
+
+// Precarga en el panel ELO el partido activo de ⚔️ PARTIDO
+function usarPartidoActivo(){
+  if(!lastRes){
+    alert('Primero selecciona un partido en ⚔️ PARTIDO');
+    return;
+  }
+  const resLocal=document.getElementById('res-local');
+  const resVisit=document.getElementById('res-visit');
+  if(resLocal)resLocal.value=lastRes.local;
+  if(resVisit)resVisit.value=lastRes.visit;
+  document.getElementById('res-gl').value='';
+  document.getElementById('res-gv').value='';
+  document.getElementById('res-feedback').style.display='none';
+  const hint=document.getElementById('partido-activo-hint');
+  if(hint){
+    hint.textContent=`${lastRes.local} vs ${lastRes.visit} cargado — introduce el resultado`;
+    hint.style.display='block';
+  }
 }
 
 function aplicarResultado(){
