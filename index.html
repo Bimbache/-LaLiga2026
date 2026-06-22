@@ -1968,8 +1968,9 @@ function predKey(local,visit){return LIGA+'|'+local+'|'+visit;}
 function guardarPrediccion(local,visit,res){
   if(!predLog[LIGA])predLog[LIGA]=[];
   const key=predKey(local,visit);
-  // Eliminar predicción anterior del mismo partido si existe
-  predLog[LIGA]=predLog[LIGA].filter(p=>p.key!==key||p.resultado!==null);
+  // Eliminar TODAS las predicciones pendientes del mismo partido
+  // (el usuario puede recalcular antes del partido)
+  predLog[LIGA]=predLog[LIGA].filter(p=>!(p.key===key&&p.resultado===null));
   predLog[LIGA].push({
     key,local,visit,
     p1:res.p1,pe:res.pe,p2:res.p2,
@@ -1977,7 +1978,7 @@ function guardarPrediccion(local,visit,res){
     btts:parseFloat((res.btts*100).toFixed(1)),
     l1:res.l1,l2:res.l2,
     ts:Date.now(),
-    resultado:null, // null = pendiente de resultado real
+    resultado:null,
     acierto1X2:null,
     aciertoOU25:null
   });
