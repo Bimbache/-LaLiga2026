@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -139,6 +140,7 @@ select:focus{outline:none;border-color:var(--blue)}
     <div class="tab" onclick="showTab('clasificacion')" id="tab-clasificacion">📊 TABLA</div>
     <div class="tab" onclick="showTab('top3')" id="tab-top3">🎯 TOP 3</div>
     <div class="tab" onclick="showTab('combinada')" id="tab-combinada">🔗 COMBO</div>
+    <div class="tab" onclick="showTab('apuestas')" id="tab-apuestas">💰 APUESTAS</div>
   </div>
 </div>
 
@@ -570,6 +572,100 @@ select:focus{outline:none;border-color:var(--blue)}
     <div class="loading" id="loading-combo"><div class="spinner"></div>Analizando...</div>
     <div class="ia-output" id="combo-output"></div>
   </div>
+</div>
+
+<!-- PUNTO 26D — REGISTRO DE APUESTAS + KELLY FRACCIONAL -->
+<div class="section" id="section-apuestas">
+
+  <!-- Kelly fraccional -->
+  <div class="card">
+    <div class="card-title">📐 KELLY FRACCIONAL · STAKE RECOMENDADO</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Calcula el stake óptimo según el edge del partido activo. Usa Kelly al 25% (estándar conservador). Requiere tener un partido calculado en ⚔️ PARTIDO con cuotas introducidas.
+    </div>
+    <div class="select-row">
+      <div class="select-wrap">
+        <label>BANKROLL (€)</label>
+        <input type="number" min="1" id="kelly-bankroll" placeholder="ej. 300" oninput="calcularKelly()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+      </div>
+      <div class="select-wrap">
+        <label>FRACCIÓN KELLY</label>
+        <select id="kelly-fraccion" onchange="calcularKelly()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <option value="0.25">25% (conservador)</option>
+          <option value="0.50">50% (moderado)</option>
+          <option value="0.10">10% (muy conservador)</option>
+        </select>
+      </div>
+    </div>
+    <div id="kelly-result" style="display:none;margin-top:10px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:8px">STAKES RECOMENDADOS</div>
+      <div id="kelly-items"></div>
+    </div>
+    <div id="kelly-nodata" style="font-size:9px;color:var(--muted);margin-top:8px">
+      Introduce el bankroll y selecciona un partido con cuotas en ⚔️ PARTIDO para ver el stake recomendado.
+    </div>
+  </div>
+
+  <!-- Registro de apuestas -->
+  <div class="card">
+    <div class="card-title">📒 REGISTRO DE APUESTAS</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Anota cada apuesta real. Lleva el control de tu bankroll y ROI sin depender de documentos externos.
+    </div>
+
+    <!-- Formulario nueva apuesta -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Oswald',sans-serif;margin-bottom:8px">NUEVA APUESTA</div>
+      <div class="select-row">
+        <div class="select-wrap">
+          <label>PARTIDO</label>
+          <input type="text" id="ap-partido" placeholder="ej. Real Madrid vs Betis" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+        <div class="select-wrap">
+          <label>MERCADO</label>
+          <input type="text" id="ap-mercado" placeholder="ej. Over 2.5" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+      </div>
+      <div class="select-row">
+        <div class="select-wrap">
+          <label>CUOTA</label>
+          <input type="number" step="0.01" min="1.01" id="ap-cuota" placeholder="ej. 1.85" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+        <div class="select-wrap">
+          <label>STAKE (€)</label>
+          <input type="number" step="0.50" min="1" id="ap-stake" placeholder="ej. 20" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+      </div>
+      <div class="select-row">
+        <div class="select-wrap">
+          <label>RESULTADO</label>
+          <select id="ap-resultado" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+            <option value="pendiente">⏳ Pendiente</option>
+            <option value="ganada">✅ Ganada</option>
+            <option value="perdida">❌ Perdida</option>
+            <option value="void">↩️ Void/Devuelta</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <label>EDGE DEL MODELO (%)</label>
+          <input type="number" step="0.1" id="ap-edge" placeholder="ej. 5.2" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+        </div>
+      </div>
+      <button class="btn" onclick="guardarApuesta()">💰 Registrar apuesta</button>
+      <button class="btn btn-secondary" style="margin-top:6px;font-size:10px" onclick="precargarApuestaActiva()">⚔️ Precargar partido activo</button>
+    </div>
+
+    <!-- Estadísticas -->
+    <div id="apuestas-stats" style="display:none;margin-bottom:10px;padding:10px;background:rgba(255,255,255,.03);border-radius:8px"></div>
+
+    <!-- Lista de apuestas -->
+    <div id="apuestas-list">
+      <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin apuestas registradas aún</div>
+    </div>
+
+    <button class="btn btn-secondary" style="margin-top:8px;font-size:10px" onclick="limpiarApuestas()">Limpiar registro</button>
+  </div>
+
 </div>
 
 </div><!-- /main -->
@@ -1204,6 +1300,7 @@ function setLiga(liga){
   combos=[];renderCombos();
   renderPredLog();
   calcularMetricas();
+  renderApuestas();
 }
 
 function showTab(t){
@@ -2363,12 +2460,218 @@ function calcularMetricas(){
 }
 
 // ═══════════════════════════════════════════════════════
+// PUNTO 26D — REGISTRO DE APUESTAS + KELLY FRACCIONAL
+// Pestaña dedicada para anotar apuestas reales, calcular
+// ROI y recibir stake recomendado según Kelly fraccional.
+// Todo en localStorage — sin APIs adicionales.
+// Kelly fraccional: stake = (edge / (cuota-1)) × fracción × bankroll
+// Fracción estándar: 0.25 (25% del Kelly completo)
+// ═══════════════════════════════════════════════════════
+
+let registroApuestas = {laliga:[], segunda:[]};
+try {
+  const ra = localStorage.getItem('registro_apuestas_v1');
+  if (ra) registroApuestas = JSON.parse(ra);
+} catch(e) {}
+
+function guardarApuesta() {
+  const partido = document.getElementById('ap-partido').value.trim();
+  const mercado = document.getElementById('ap-mercado').value.trim();
+  const cuota = parseFloat(document.getElementById('ap-cuota').value);
+  const stake = parseFloat(document.getElementById('ap-stake').value);
+  const resultado = document.getElementById('ap-resultado').value;
+  const edge = parseFloat(document.getElementById('ap-edge').value) || null;
+
+  if (!partido || !mercado || !cuota || !stake) {
+    alert('Rellena partido, mercado, cuota y stake');
+    return;
+  }
+
+  if (!registroApuestas[LIGA]) registroApuestas[LIGA] = [];
+  registroApuestas[LIGA].push({
+    id: Date.now(),
+    partido, mercado, cuota, stake, resultado, edge,
+    ts: Date.now(),
+    beneficio: resultado === 'ganada' ? parseFloat(((cuota-1)*stake).toFixed(2))
+              : resultado === 'perdida' ? -stake
+              : 0
+  });
+
+  try { localStorage.setItem('registro_apuestas_v1', JSON.stringify(registroApuestas)); } catch(e) {}
+
+  // Limpiar formulario
+  document.getElementById('ap-partido').value = '';
+  document.getElementById('ap-mercado').value = '';
+  document.getElementById('ap-cuota').value = '';
+  document.getElementById('ap-stake').value = '';
+  document.getElementById('ap-edge').value = '';
+  document.getElementById('ap-resultado').value = 'pendiente';
+
+  renderApuestas();
+}
+
+function precargarApuestaActiva() {
+  if (!lastRes) { alert('Primero selecciona un partido en ⚔️ PARTIDO'); return; }
+  document.getElementById('ap-partido').value = `${lastRes.local} vs ${lastRes.visit}`;
+}
+
+function actualizarResultadoApuesta(id, nuevoResultado) {
+  if (!registroApuestas[LIGA]) return;
+  const ap = registroApuestas[LIGA].find(a => a.id === id);
+  if (!ap) return;
+  ap.resultado = nuevoResultado;
+  ap.beneficio = nuevoResultado === 'ganada' ? parseFloat(((ap.cuota-1)*ap.stake).toFixed(2))
+               : nuevoResultado === 'perdida' ? -ap.stake
+               : 0;
+  try { localStorage.setItem('registro_apuestas_v1', JSON.stringify(registroApuestas)); } catch(e) {}
+  renderApuestas();
+}
+
+function limpiarApuestas() {
+  registroApuestas[LIGA] = [];
+  try { localStorage.setItem('registro_apuestas_v1', JSON.stringify(registroApuestas)); } catch(e) {}
+  renderApuestas();
+}
+
+function calcularKelly() {
+  const bankroll = parseFloat(document.getElementById('kelly-bankroll').value);
+  const fraccion = parseFloat(document.getElementById('kelly-fraccion').value);
+  const result = document.getElementById('kelly-result');
+  const nodata = document.getElementById('kelly-nodata');
+  const items = document.getElementById('kelly-items');
+
+  if (!bankroll || !lastRes) {
+    result.style.display = 'none';
+    nodata.style.display = 'block';
+    return;
+  }
+
+  // Calcular stakes para los mercados principales si hay cuotas
+  const mercados = [];
+
+  // 1X2 con cuotas bayesianas si están disponibles
+  const bq1 = parseFloat(document.getElementById('bayes-q1')?.value);
+  const bqe = parseFloat(document.getElementById('bayes-qe')?.value);
+  const bq2 = parseFloat(document.getElementById('bayes-q2')?.value);
+
+  if (bq1 > 1.01) {
+    const edge1 = (lastRes.p1/100) * bq1 - 1;
+    if (edge1 > 0) mercados.push({label: `${lastRes.local} gana`, cuota: bq1, edge: edge1});
+    const edgee = (lastRes.pe/100) * bqe - 1;
+    if (edgee > 0) mercados.push({label: 'Empate', cuota: bqe, edge: edgee});
+    const edge2 = (lastRes.p2/100) * bq2 - 1;
+    if (edge2 > 0) mercados.push({label: `${lastRes.visit} gana`, cuota: bq2, edge: edge2});
+  }
+
+  // O/U 2.5
+  const qOver = parseFloat(document.getElementById('ou-bayes-over')?.value);
+  const qUnder = parseFloat(document.getElementById('ou-bayes-under')?.value);
+  if (qOver > 1.01) {
+    const edgeO = lastRes.ou25 * qOver - 1;
+    if (edgeO > 0) mercados.push({label: 'Over 2.5', cuota: qOver, edge: edgeO});
+    const edgeU = (1-lastRes.ou25) * qUnder - 1;
+    if (edgeU > 0) mercados.push({label: 'Under 2.5', cuota: qUnder, edge: edgeU});
+  }
+
+  if (!mercados.length) {
+    result.style.display = 'none';
+    nodata.style.display = 'block';
+    nodata.textContent = 'Introduce cuotas reales en ⚔️ PARTIDO para calcular el stake recomendado.';
+    return;
+  }
+
+  nodata.style.display = 'none';
+  result.style.display = 'block';
+
+  items.innerHTML = mercados.map(m => {
+    // Kelly = edge / (cuota - 1)
+    const kellyPct = m.edge / (m.cuota - 1);
+    const stake = Math.max(0, kellyPct * fraccion * bankroll);
+    const color = stake > 0 ? 'var(--green)' : 'var(--muted)';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:10px;font-weight:600">${m.label}</div>
+        <div style="font-size:9px;color:var(--muted)">Cuota ${m.cuota.toFixed(2)} · Edge ${(m.edge*100).toFixed(1)}%</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:16px;font-weight:700;font-family:'Oswald',sans-serif;color:${color}">${stake.toFixed(2)}€</div>
+        <div style="font-size:8px;color:var(--muted)">Kelly ${(kellyPct*100).toFixed(1)}% × ${fraccion*100}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderApuestas() {
+  const list = document.getElementById('apuestas-list');
+  const stats = document.getElementById('apuestas-stats');
+  if (!list) return;
+
+  const apuestas = (registroApuestas[LIGA] || []).slice().reverse();
+
+  if (!apuestas.length) {
+    list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin apuestas registradas aún</div>';
+    stats.style.display = 'none';
+    return;
+  }
+
+  // Estadísticas
+  const resueltas = apuestas.filter(a => a.resultado !== 'pendiente' && a.resultado !== 'void');
+  const ganadas = resueltas.filter(a => a.resultado === 'ganada').length;
+  const totalStake = resueltas.reduce((s,a) => s + a.stake, 0);
+  const totalBeneficio = resueltas.reduce((s,a) => s + a.beneficio, 0);
+  const roi = totalStake > 0 ? ((totalBeneficio/totalStake)*100).toFixed(1) : 0;
+  const roiColor = parseFloat(roi) >= 0 ? 'var(--green)' : 'var(--red)';
+
+  stats.style.display = 'block';
+  stats.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;text-align:center">
+      <div><div style="font-size:9px;color:var(--muted)">APUESTAS</div><div style="font-size:16px;font-weight:700;font-family:'Oswald',sans-serif">${resueltas.length}</div></div>
+      <div><div style="font-size:9px;color:var(--muted)">GANADAS</div><div style="font-size:16px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--green)">${ganadas}</div></div>
+      <div><div style="font-size:9px;color:var(--muted)">BENEFICIO</div><div style="font-size:16px;font-weight:700;font-family:'Oswald',sans-serif;color:${roiColor}">${totalBeneficio>=0?'+':''}${totalBeneficio.toFixed(2)}€</div></div>
+      <div><div style="font-size:9px;color:var(--muted)">ROI</div><div style="font-size:16px;font-weight:700;font-family:'Oswald',sans-serif;color:${roiColor}">${roi}%</div></div>
+    </div>`;
+
+  const colores = {ganada:'var(--green)', perdida:'var(--red)', pendiente:'var(--yellow)', void:'var(--muted)'};
+  const iconos = {ganada:'✅', perdida:'❌', pendiente:'⏳', void:'↩️'};
+
+  list.innerHTML = apuestas.map(a => {
+    const fecha = new Date(a.ts).toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'});
+    const ben = a.resultado === 'ganada' ? `+${((a.cuota-1)*a.stake).toFixed(2)}€`
+              : a.resultado === 'perdida' ? `-${a.stake.toFixed(2)}€`
+              : '';
+    return `<div style="padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px;border-left:3px solid ${colores[a.resultado]||'var(--muted)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <span style="font-size:10px;font-weight:600">${a.partido}</span>
+        <span style="font-size:9px;color:var(--muted)">${fecha}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:9px;color:var(--blue)">${a.mercado}</span>
+          <span style="font-size:9px;color:var(--muted)"> · ${a.cuota.toFixed(2)} · ${a.stake.toFixed(2)}€</span>
+          ${a.edge?`<span style="font-size:9px;color:var(--muted)"> · edge ${a.edge}%</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${ben?`<span style="font-size:10px;font-weight:700;color:${colores[a.resultado]}">${ben}</span>`:''}
+          <select onchange="actualizarResultadoApuesta(${a.id}, this.value)" style="font-size:9px;padding:2px 4px;background:#0a1628;border:1px solid var(--border);border-radius:4px;color:${colores[a.resultado]}">
+            <option value="pendiente" ${a.resultado==='pendiente'?'selected':''}>⏳</option>
+            <option value="ganada" ${a.resultado==='ganada'?'selected':''}>✅</option>
+            <option value="perdida" ${a.resultado==='perdida'?'selected':''}>❌</option>
+            <option value="void" ${a.resultado==='void'?'selected':''}>↩️</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 fillSelects();
 fillClasificacion();
 renderPredLog();
 calcularMetricas();
+renderApuestas();
 </script>
 
 <!-- PROXY FUNCTIONS: api/claude.js y api/odds.js (Vercel) -->
