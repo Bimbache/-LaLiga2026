@@ -1238,7 +1238,7 @@ async function buscarNoticias(eq1,eq2){
   cont.innerHTML='<div style="color:var(--muted);font-size:10px">Buscando bajas...</div>';
 
   try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-haiku-4-5-20251001',max_tokens:400,
       system:'Analista fútbol LaLiga. Responde SOLO en JSON sin texto extra ni markdown.',
       messages:[{role:'user',content:`Bajas, lesiones o sanciones conocidas de ${eq1} y ${eq2} para LaLiga 26/27. JSON:\n{"bajas1":["jugador(motivo)"],"bajas2":["jugador(motivo)"],"factor1":1.0,"factor2":1.0,"resumen":"1 línea"}\nfactor=multiplicador xG: 0.85=estrella baja, 0.90=importante, 0.95=moderada, 1.0=sin bajas. Arrays vacíos si no hay bajas conocidas.`}]
@@ -1455,7 +1455,7 @@ async function cargarTop3Jornada(){
   list.innerHTML='';
 
   try{
-    const r=await fetch('/.netlify/functions/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
+    const r=await fetch('/api/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
     const data=await r.json();
 
     if(!Array.isArray(data)||!data.length){
@@ -1712,7 +1712,7 @@ async function autoFetchCuotas(){
   if(estado){estado.style.display='block';estado.innerHTML='<span style="color:var(--muted)">Buscando cuotas reales...</span>';}
 
   try{
-    const r=await fetch('/.netlify/functions/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
+    const r=await fetch('/api/odds?sport=soccer_spain_la_liga&regions=eu&markets=h2h,totals');
     const data=await r.json();
     if(!Array.isArray(data)||!data.length){
       if(estado)estado.innerHTML='<span style="color:var(--muted)">Sin cuotas disponibles para este partido todavía (normal si faltan días)</span>';
@@ -1836,7 +1836,7 @@ async function analizarIA(){
   out.style.display='none';load.style.display='block';
 
   try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-haiku-4-5-20251001',max_tokens:600,
       system:'Eres un analista de fútbol español experto en LaLiga y Segunda División. Análisis conciso, sin asteriscos, en español.',
       messages:[{role:'user',content:`Analiza este partido de liga española:\n${lastRes.local} vs ${lastRes.visit}\nProbabilidades: ${lastRes.local} ${lastRes.p1}% | Empate ${lastRes.pe}% | ${lastRes.visit} ${lastRes.p2}%\nGoles esperados: ${lastRes.l1} vs ${lastRes.l2}\nMarcador más probable: ${lastRes.marc} (${lastRes.marcP}%)\nOver 2.5: ${pct(lastRes.ou25)} | BTTS: ${pct(lastRes.btts)}\nCerteza del modelo: ${lastRes.conf}%\n${adjFactors.f1!==1.0?'⚠️ Bajas activas en '+lastRes.local:''}\n${adjFactors.f2!==1.0?'⚠️ Bajas activas en '+lastRes.visit:''}\n\nDa: análisis táctico, factores clave, mercados recomendados y predicción final.`}]
@@ -1926,7 +1926,7 @@ async function analizarCombo(){
   const resumen=combos.map(c=>`${c.partido}: ${c.mercado} (${pct(c.prob)})`).join('\n');
 
   try{
-    const r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-haiku-4-5-20251001',max_tokens:500,
       system:'Analista fútbol español. Analiza combinadas de LaLiga/Segunda. Español conciso, sin asteriscos.',
       messages:[{role:'user',content:`Analiza esta combinada de liga española:\n${resumen}\nProbabilidad conjunta: ${pct(probConj)}\n\n¿Tiene coherencia estadística? ¿Hay correlaciones entre las selecciones? ¿Es una buena combinada? Recomendación final.`}]
@@ -2264,6 +2264,6 @@ renderPredLog();
 calcularMetricas();
 </script>
 
-<!-- PROXY FUNCTIONS NEEDED: netlify/functions/claude.js -->
+<!-- PROXY FUNCTIONS: api/claude.js y api/odds.js (Vercel) -->
 </body>
 </html>
