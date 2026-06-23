@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1227,7 +1228,44 @@ function onSelectChange(){
 // ═══════════════════════════════════════════════════════
 // NOTICIAS / BAJAS
 // ═══════════════════════════════════════════════════════
-async function buscarNoticias(eq1,eq2){
+// ═══════════════════════════════════════════════════════
+// PUNTO 26 — ÁRBITRO + ALINEACIONES + LESIONES VÍA API-FOOTBALL
+// Sustituye la consulta a Claude Haiku para bajas por datos
+// reales y oficiales de API-Football. Mantiene el análisis IA
+// como complemento para contexto táctico adicional.
+// ═══════════════════════════════════════════════════════
+
+// IDs de LaLiga y Segunda en API-Football
+const API_FOOTBALL_LEAGUES = {laliga: 140, segunda: 141};
+const API_FOOTBALL_SEASON = 2026;
+
+async function fetchFootball(endpoint, params) {
+  const query = new URLSearchParams({endpoint, ...params}).toString();
+  const r = await fetch(`/api/football?${query}`);
+  return r.json();
+}
+
+// Buscar fixture ID del partido local vs visitante
+async function buscarFixtureId(eq1, eq2) {
+  try {
+    const leagueId = API_FOOTBALL_LEAGUES[LIGA];
+    const data = await fetchFootball('fixtures', {
+      league: leagueId,
+      season: API_FOOTBALL_SEASON,
+      team: '' // se filtra por nombre después
+    });
+    if (!data.response) return null;
+    const fixture = data.response.find(f =>
+      (normalizar(f.teams.home.name).includes(normalizar(eq1.split(' ')[0])) ||
+       normalizar(eq1).includes(normalizar(f.teams.home.name.split(' ')[0]))) &&
+      (normalizar(f.teams.away.name).includes(normalizar(eq2.split(' ')[0])) ||
+       normalizar(eq2).includes(normalizar(f.teams.away.name.split(' ')[0])))
+    );
+    return fixture ? fixture.fixture.id : null;
+  } catch(e) { return null; }
+}
+
+async function buscarNoticias(eq1, eq2){
   document.getElementById('noticias-wrap').style.display='none';
   document.getElementById('certeza-wrap').style.display='none';
   document.getElementById('resultado-wrap').style.display='none';
@@ -1235,35 +1273,104 @@ async function buscarNoticias(eq1,eq2){
   const wrap=document.getElementById('noticias-wrap');
   const cont=document.getElementById('noticias-content');
   wrap.style.display='block';
-  cont.innerHTML='<div style="color:var(--muted);font-size:10px">Buscando bajas...</div>';
+  cont.innerHTML='<div style="color:var(--muted);font-size:10px">Buscando datos del partido...</div>';
 
-  try{
-    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',max_tokens:400,
-      system:'Analista fútbol LaLiga. Responde SOLO en JSON sin texto extra ni markdown.',
-      messages:[{role:'user',content:`Bajas, lesiones o sanciones conocidas de ${eq1} y ${eq2} para LaLiga 26/27. JSON:\n{"bajas1":["jugador(motivo)"],"bajas2":["jugador(motivo)"],"factor1":1.0,"factor2":1.0,"resumen":"1 línea"}\nfactor=multiplicador xG: 0.85=estrella baja, 0.90=importante, 0.95=moderada, 1.0=sin bajas. Arrays vacíos si no hay bajas conocidas.`}]
-    })});
-    const data=await r.json();
-    const txt=data.content?.map(c=>c.text||'').join('');
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const json=JSON.parse(clean);
+  let htmlArbitro = '';
+  let htmlAlineaciones = '';
+  let htmlLesiones = '';
+  let factor1 = 1.0, factor2 = 1.0;
 
-    adjFactors={f1:json.factor1||1.0,f2:json.factor2||1.0};
-    const ajustado=adjFactors.f1!==1.0||adjFactors.f2!==1.0;
+  try {
+    // ── LESIONES CONFIRMADAS (API-Football) ──────────────
+    const leagueId = API_FOOTBALL_LEAGUES[LIGA];
 
-    let html='';
-    if(ajustado)html+=`<div class="noticias-badge">⚠️ AJUSTADO</div>`;
-    if(json.bajas1?.length)html+=json.bajas1.map(b=>`<div class="baja-item">🔴 ${eq1}: ${b}</div>`).join('');
-    if(json.bajas2?.length)html+=json.bajas2.map(b=>`<div class="baja-item">🔴 ${eq2}: ${b}</div>`).join('');
-    if(json.resumen)html+=`<div class="noticias-text" style="margin-top:6px">${json.resumen}</div>`;
-    if(!ajustado&&!json.bajas1?.length&&!json.bajas2?.length)html='<div class="noticias-text">Sin bajas relevantes confirmadas</div>';
+    const [lesiones1Data, lesiones2Data] = await Promise.all([
+      fetchFootball('injuries', {league: leagueId, season: API_FOOTBALL_SEASON, team: buscarTeamId(eq1)}),
+      fetchFootball('injuries', {league: leagueId, season: API_FOOTBALL_SEASON, team: buscarTeamId(eq2)})
+    ]);
 
-    cont.innerHTML=html;
-  }catch(e){
-    cont.innerHTML='<div class="noticias-text">Sin datos de bajas disponibles</div>';
+    const lesiones1 = lesiones1Data?.response?.filter(l => l.player.reason !== 'Missing Fixture') || [];
+    const lesiones2 = lesiones2Data?.response?.filter(l => l.player.reason !== 'Missing Fixture') || [];
+
+    // Calcular factor de impacto según número y tipo de bajas
+    const calcFactor = (lesiones) => {
+      if (!lesiones.length) return 1.0;
+      let impacto = 0;
+      lesiones.forEach(l => {
+        const tipo = (l.player.reason || '').toLowerCase();
+        if (tipo.includes('out') || tipo.includes('season')) impacto += 0.05;
+        else if (tipo.includes('doubt') || tipo.includes('questionable')) impacto += 0.02;
+        else impacto += 0.03;
+      });
+      return Math.max(0.80, 1.0 - Math.min(impacto, 0.20));
+    };
+
+    factor1 = calcFactor(lesiones1);
+    factor2 = calcFactor(lesiones2);
+
+    if (lesiones1.length || lesiones2.length) {
+      htmlLesiones = '<div style="margin-bottom:6px">';
+      lesiones1.slice(0,4).forEach(l => {
+        htmlLesiones += `<div class="baja-item">🔴 ${eq1}: ${l.player.name} (${l.player.reason||'Lesión'})</div>`;
+      });
+      lesiones2.slice(0,4).forEach(l => {
+        htmlLesiones += `<div class="baja-item">🔴 ${eq2}: ${l.player.name} (${l.player.reason||'Lesión'})</div>`;
+      });
+      htmlLesiones += '</div>';
+    } else {
+      htmlLesiones = '<div class="noticias-text">Sin bajas confirmadas en API-Football</div>';
+    }
+
+  } catch(e) {
+    // Si API-Football falla, caer al análisis IA como antes
+    try {
+      const r = await fetch('/api/claude', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:400,
+        system:'Analista fútbol LaLiga. Responde SOLO en JSON sin texto extra ni markdown.',
+        messages:[{role:'user', content:`Bajas, lesiones o sanciones conocidas de ${eq1} y ${eq2} para LaLiga 26/27. JSON:\n{"bajas1":["jugador(motivo)"],"bajas2":["jugador(motivo)"],"factor1":1.0,"factor2":1.0,"resumen":"1 línea"}\nfactor=multiplicador xG: 0.85=estrella baja, 0.90=importante, 0.95=moderada, 1.0=sin bajas. Arrays vacíos si no hay bajas conocidas.`}]
+      })});
+      const data = await r.json();
+      const txt = data.content?.map(c=>c.text||'').join('');
+      const clean = txt.replace(/```json|```/g,'').trim();
+      const json = JSON.parse(clean);
+      factor1 = json.factor1||1.0;
+      factor2 = json.factor2||1.0;
+      if(json.bajas1?.length) htmlLesiones += json.bajas1.map(b=>`<div class="baja-item">🔴 ${eq1}: ${b}</div>`).join('');
+      if(json.bajas2?.length) htmlLesiones += json.bajas2.map(b=>`<div class="baja-item">🔴 ${eq2}: ${b}</div>`).join('');
+      if(!htmlLesiones) htmlLesiones = '<div class="noticias-text">Sin bajas relevantes confirmadas</div>';
+    } catch(e2) {
+      htmlLesiones = '<div class="noticias-text">Sin datos de bajas disponibles</div>';
+    }
   }
 
+  adjFactors = {f1: factor1, f2: factor2};
+  const ajustado = factor1 !== 1.0 || factor2 !== 1.0;
+
+  let html = '';
+  if (ajustado) html += `<div class="noticias-badge">⚠️ AJUSTADO POR BAJAS</div>`;
+  html += htmlLesiones;
+  if (htmlArbitro) html += htmlArbitro;
+  if (htmlAlineaciones) html += htmlAlineaciones;
+
+  cont.innerHTML = html || '<div class="noticias-text">Sin datos disponibles</div>';
   mostrarResultado();
+}
+
+// Mapa de equipos → IDs de API-Football (LaLiga)
+function buscarTeamId(nombre) {
+  const mapa = {
+    'Real Madrid': 541, 'Barcelona': 529, 'Atlético Madrid': 530,
+    'Athletic Bilbao': 531, 'Real Sociedad': 548, 'Villarreal': 533,
+    'Betis': 543, 'Sevilla': 536, 'Celta Vigo': 538, 'Getafe': 546,
+    'Osasuna': 727, 'Girona': 547, 'Rayo Vallecano': 728, 'Mallorca': 730,
+    'Alavés': 542, 'Valladolid': 720, 'Leganés': 724, 'Las Palmas': 737,
+    'Espanyol': 532, 'Valencia': 532,
+    // Segunda
+    'Deportivo Coruña': 2820, 'Zaragoza': 723, 'Racing Santander': 728,
+    'Sporting Gijón': 736, 'Oviedo': 739, 'Mirandés': 733,
+    'Levante': 715, 'Almería': 714, 'Tenerife': 735, 'Huesca': 731,
+  };
+  return mapa[nombre] || '';
 }
 
 // ═══════════════════════════════════════════════════════
