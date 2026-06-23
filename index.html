@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -623,7 +624,18 @@ select:focus{outline:none;border-color:var(--blue)}
         </div>
         <div class="select-wrap">
           <label>MERCADO</label>
-          <input type="text" id="ap-mercado" placeholder="ej. Over 2.5" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <select id="ap-mercado" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+            <option value="">Seleccionar...</option>
+            <option value="Local gana">Local gana</option>
+            <option value="Empate">Empate</option>
+            <option value="Visitante gana">Visitante gana</option>
+            <option value="Over 1.5">Over 1.5</option>
+            <option value="Over 2.5">Over 2.5</option>
+            <option value="Under 2.5">Under 2.5</option>
+            <option value="BTTS Sí">BTTS Sí</option>
+            <option value="BTTS No">BTTS No</option>
+            <option value="Combinada">Combinada</option>
+          </select>
         </div>
       </div>
       <div class="select-row">
@@ -633,7 +645,17 @@ select:focus{outline:none;border-color:var(--blue)}
         </div>
         <div class="select-wrap">
           <label>STAKE (€)</label>
-          <input type="number" step="0.50" min="1" id="ap-stake" placeholder="ej. 20" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <select id="ap-stake-sel" onchange="onStakeSelect()" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;margin-bottom:4px">
+            <option value="">Seleccionar...</option>
+            <option value="10">10€</option>
+            <option value="15">15€</option>
+            <option value="20">20€</option>
+            <option value="25">25€</option>
+            <option value="30">30€</option>
+            <option value="50">50€</option>
+            <option value="otro">Otro</option>
+          </select>
+          <input type="number" step="0.50" min="1" id="ap-stake" placeholder="Cantidad €" style="width:100%;padding:8px 10px;background:#0a1628;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;display:none">
         </div>
       </div>
       <div class="select-row">
@@ -2474,6 +2496,19 @@ try {
   if (ra) registroApuestas = JSON.parse(ra);
 } catch(e) {}
 
+function onStakeSelect(){
+  const sel=document.getElementById('ap-stake-sel').value;
+  const input=document.getElementById('ap-stake');
+  if(sel==='otro'){
+    input.style.display='block';
+    input.value='';
+    input.focus();
+  } else {
+    input.style.display='none';
+    input.value=sel;
+  }
+}
+
 function guardarApuesta() {
   const partido = document.getElementById('ap-partido').value.trim();
   const mercado = document.getElementById('ap-mercado').value.trim();
@@ -2504,6 +2539,8 @@ function guardarApuesta() {
   document.getElementById('ap-mercado').value = '';
   document.getElementById('ap-cuota').value = '';
   document.getElementById('ap-stake').value = '';
+  document.getElementById('ap-stake-sel').value = '';
+  document.getElementById('ap-stake').style.display = 'none';
   document.getElementById('ap-edge').value = '';
   document.getElementById('ap-resultado').value = 'pendiente';
 
