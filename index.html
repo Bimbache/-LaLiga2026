@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -430,6 +431,12 @@ select:focus{outline:none;border-color:var(--blue)}
     <div style="font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Tras cada jornada, introduce el resultado real para actualizar el ELO de ambos equipos automáticamente.
     </div>
+
+    <!-- PUNTO 26B — Carga automática de resultados vía API-Football -->
+    <button class="btn" style="margin-bottom:6px" onclick="cargarResultadosAPI()">🔄 Cargar resultados jornada (API)</button>
+    <div id="api-resultados-estado" style="font-size:9px;margin-bottom:8px;display:none"></div>
+    <div id="api-resultados-lista" style="margin-bottom:10px"></div>
+
     <button class="btn btn-secondary" style="margin-bottom:10px;font-size:10px" onclick="usarPartidoActivo()">⚔️ Usar partido activo</button>
     <div id="partido-activo-hint" style="display:none;font-size:9px;color:var(--blue);margin-bottom:8px;text-align:center"></div>
     <div class="select-row">
@@ -2699,6 +2706,151 @@ function renderApuestas() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTO 26B — CARGA AUTOMÁTICA DE RESULTADOS VÍA API-FOOTBALL
+// Obtiene partidos jugados de LaLiga/Segunda desde la última
+// jornada registrada y los muestra para aplicar con un clic.
+// Usa el mismo proxy /api/football ya configurado en Vercel.
+// Fuente manual sigue disponible como fallback siempre.
+// ═══════════════════════════════════════════════════════
+
+// Timestamp de la última carga automática por liga
+let ultimaCargaAPI = {laliga: 0, segunda: 0};
+try {
+  const uc = localStorage.getItem('ultima_carga_api_v1');
+  if (uc) ultimaCargaAPI = JSON.parse(uc);
+} catch(e) {}
+
+async function cargarResultadosAPI() {
+  const estado = document.getElementById('api-resultados-estado');
+  const lista = document.getElementById('api-resultados-lista');
+  if (!estado || !lista) return;
+
+  estado.style.display = 'block';
+  estado.innerHTML = '<span style="color:var(--muted)">🔄 Consultando API-Football...</span>';
+  lista.innerHTML = '';
+
+  try {
+    const leagueId = API_FOOTBALL_LEAGUES[LIGA];
+    const season = API_FOOTBALL_SEASON;
+
+    // Obtener partidos de la temporada actual — estado FT (jugados)
+    const data = await fetchFootball('fixtures', {
+      league: leagueId,
+      season: season,
+      status: 'FT'
+    });
+
+    if (!data.response || !data.response.length) {
+      estado.innerHTML = '<span style="color:var(--muted)">Sin partidos finalizados en la API todavía (temporada no iniciada)</span>';
+      return;
+    }
+
+    // Filtrar partidos ya registrados en el historial
+    const hist = historialPartidos[LIGA] || [];
+    const registrados = new Set(hist.map(p => `${p.local}|${p.visit}|${p.gl}-${p.gv}`));
+
+    // Mapear nombres de API a nombres internos
+    const partidosPendientes = [];
+    for (const f of data.response) {
+      const local = emparejarEquipoInterno(f.teams.home.name);
+      const visit = emparejarEquipoInterno(f.teams.away.name);
+      if (!local || !visit || local === visit) continue;
+
+      const gl = f.goals.home;
+      const gv = f.goals.away;
+      if (gl === null || gv === null) continue;
+
+      const clave = `${local}|${visit}|${gl}-${gv}`;
+      if (registrados.has(clave)) continue; // ya registrado
+
+      partidosPendientes.push({local, visit, gl, gv,
+        fecha: f.fixture.date?.substring(0,10) || '',
+        fixtureId: f.fixture.id
+      });
+    }
+
+    if (!partidosPendientes.length) {
+      estado.innerHTML = '<span style="color:var(--green)">✅ Todo al día — sin resultados nuevos pendientes de registrar</span>';
+      return;
+    }
+
+    estado.innerHTML = `<span style="color:var(--yellow)">⚡ ${partidosPendientes.length} partido${partidosPendientes.length>1?'s':''} nuevo${partidosPendientes.length>1?'s':''} encontrado${partidosPendientes.length>1?'s':''}. Revisa y aplica:</span>`;
+
+    lista.innerHTML = partidosPendientes.map((p, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:4px">
+        <div>
+          <div style="font-size:10px;font-weight:600">${p.local} ${p.gl}-${p.gv} ${p.visit}</div>
+          <div style="font-size:9px;color:var(--muted)">${p.fecha}</div>
+        </div>
+        <button class="btn" style="width:auto;padding:6px 12px;font-size:10px;margin:0"
+          onclick="aplicarResultadoAPI('${p.local}','${p.visit}',${p.gl},${p.gv},this)">
+          ⚡ Aplicar
+        </button>
+      </div>`).join('');
+
+    // Botón para aplicar todos
+    if (partidosPendientes.length > 1) {
+      lista.innerHTML += `<button class="btn" style="margin-top:6px;font-size:11px"
+        onclick="aplicarTodosResultados(${JSON.stringify(partidosPendientes).replace(/"/g,'&quot;')})">
+        ⚡ Aplicar todos (${partidosPendientes.length})
+      </button>`;
+    }
+
+    ultimaCargaAPI[LIGA] = Date.now();
+    try { localStorage.setItem('ultima_carga_api_v1', JSON.stringify(ultimaCargaAPI)); } catch(e) {}
+
+  } catch(error) {
+    estado.innerHTML = `<span style="color:var(--red)">Error al consultar API-Football: ${error.message}</span>`;
+  }
+}
+
+// Emparejar nombre de API-Football con nombre interno de EQUIPOS
+function emparejarEquipoInterno(nombreAPI) {
+  if (!nombreAPI) return null;
+  const norm = normalizar(nombreAPI);
+  const palabrasIgnorar = ['real', 'club', 'de', 'cf', 'fc', 'sd', 'ud', 'cd'];
+  const palabrasAPI = norm.split(' ').filter(w => w.length > 2 && !palabrasIgnorar.includes(w));
+
+  let mejor = null, mejorScore = 0;
+  for (const equipo of Object.keys(EQUIPOS)) {
+    const normEq = normalizar(equipo);
+    const palabrasEq = normEq.split(' ').filter(w => w.length > 2 && !palabrasIgnorar.includes(w));
+    const coincidencias = palabrasAPI.filter(w => palabrasEq.some(we => we.includes(w) || w.includes(we))).length;
+    if (coincidencias > mejorScore) { mejorScore = coincidencias; mejor = equipo; }
+  }
+  return mejorScore > 0 ? mejor : null;
+}
+
+function aplicarResultadoAPI(local, visit, gl, gv, btn) {
+  const r = actualizarELO(local, visit, gl, gv);
+  registrarResultadoEnLog(local, visit, gl, gv);
+  if (btn) {
+    btn.textContent = '✅ Aplicado';
+    btn.disabled = true;
+    btn.style.background = 'rgba(0,230,118,.15)';
+    btn.style.color = 'var(--green)';
+  }
+  fillClasificacion();
+  renderPredLog();
+}
+
+function aplicarTodosResultados(partidos) {
+  let aplicados = 0;
+  partidos.forEach(p => {
+    actualizarELO(p.local, p.visit, p.gl, p.gv);
+    registrarResultadoEnLog(p.local, p.visit, p.gl, p.gv);
+    aplicados++;
+  });
+  fillClasificacion();
+  renderPredLog();
+  document.getElementById('api-resultados-lista').innerHTML =
+    `<div style="padding:8px 10px;background:rgba(0,230,118,.08);border-radius:8px;font-size:10px;color:var(--green)">
+      ✅ ${aplicados} resultado${aplicados>1?'s':''} aplicado${aplicados>1?'s':''}. ELO actualizado.
+    </div>`;
+  document.getElementById('api-resultados-estado').style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════════════
