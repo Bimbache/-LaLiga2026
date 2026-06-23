@@ -866,12 +866,28 @@ function intensidadShock(nombre){
 const FS_VENTANA=5;
 const FS_MIN=0.92, FS_MAX=1.08;
 
+// PUNTO 26F — FORMA RECIENTE PONDERADA
+// Pesos exponenciales sobre los últimos 5 partidos:
+// más antiguo (0.4) → más reciente (1.2)
+// El último partido pesa 3x más que el de hace 5 semanas.
+const PESOS_FORMA=[0.4,0.6,0.8,1.0,1.2]; // índice 0 = más antiguo
+
 function factorFinishing(nombre){
   const hist=historialPartidos[LIGA]||[];
   const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
   if(partidos.length<3)return 1.0;
   const golesReales=partidos.map(p=>p.local===nombre?p.gl:p.gv);
-  const avgGoles=golesReales.reduce((a,b)=>a+b,0)/golesReales.length;
+
+  // Aplicar pesos exponenciales — alinear desde el final
+  const offset=PESOS_FORMA.length-golesReales.length;
+  let sumaPesos=0, sumaGoles=0;
+  golesReales.forEach((g,i)=>{
+    const peso=PESOS_FORMA[offset+i]||1.0;
+    sumaGoles+=g*peso;
+    sumaPesos+=peso;
+  });
+  const avgGoles=sumaGoles/sumaPesos;
+
   const atkBase=EQUIPOS[nombre]&&EQUIPOS[nombre].atk;
   if(!atkBase||atkBase<=0)return 1.0;
   const ratio=avgGoles/atkBase;
@@ -883,7 +899,17 @@ function factorShotStopping(nombre){
   const partidos=hist.filter(p=>p.local===nombre||p.visit===nombre).slice(-FS_VENTANA);
   if(partidos.length<3)return 1.0;
   const golesEncajados=partidos.map(p=>p.local===nombre?p.gv:p.gl);
-  const avgEncajados=golesEncajados.reduce((a,b)=>a+b,0)/golesEncajados.length;
+
+  // Aplicar pesos exponenciales
+  const offset=PESOS_FORMA.length-golesEncajados.length;
+  let sumaPesos=0, sumaGoles=0;
+  golesEncajados.forEach((g,i)=>{
+    const peso=PESOS_FORMA[offset+i]||1.0;
+    sumaGoles+=g*peso;
+    sumaPesos+=peso;
+  });
+  const avgEncajados=sumaGoles/sumaPesos;
+
   const defBase=EQUIPOS[nombre]&&EQUIPOS[nombre].def;
   if(!defBase||defBase<=0)return 1.0;
   const ratio=avgEncajados/defBase;
@@ -982,44 +1008,6 @@ function golesDist(mean,k,disp){
   return negBinom(mean,k,r);
 }
 
-// ═══════════════════════════════════════════════════════
-// PUNTO 26E — AJUSTE POR CALENDARIO (DÍAS DE DESCANSO)
-// Usa los timestamps del historial de partidos para calcular
-// los días transcurridos desde el último partido de cada equipo.
-// Sin campos manuales — completamente automático.
-// Impacto: ±3-4% en ataque según fatiga/descanso acumulado.
-// ═══════════════════════════════════════════════════════
-function factorCalendario(nombre){
-  const hist=(historialPartidos[LIGA]||[]).filter(p=>p.local===nombre||p.visit===nombre);
-  if(!hist.length)return{atk:1.0,def:1.0};
-
-  // Ordenar por timestamp descendente
-  const ordenados=[...hist].sort((a,b)=>b.ts-a.ts);
-  const ahora=Date.now();
-  const msPartiDia=1000*60*60*24;
-
-  // Días desde el último partido
-  const diasDesdeUltimo=(ahora-ordenados[0].ts)/msPartiDia;
-
-  // Detectar si jugó dos partidos en los últimos 5 días
-  const en5Dias=ordenados.filter(p=>(ahora-p.ts)/msPartiDia<=5).length;
-  const dobleEsfuerzo=en5Dias>=2;
-
-  let fAtk=1.0, fDef=1.0;
-
-  if(diasDesdeUltimo>=7){
-    fAtk=1.03; // descansado → +3% ataque
-  } else if(diasDesdeUltimo<=3){
-    fAtk=0.96; // poco descanso → -4% ataque
-  }
-
-  if(dobleEsfuerzo){
-    fDef=0.98; // acumulación → -2% defensa adicional
-  }
-
-  return{atk:parseFloat(fAtk.toFixed(3)),def:parseFloat(fDef.toFixed(3))};
-}
-
 function calcular(local,visit,f1=1.0,f2=1.0){
   const s1=EQUIPOS[local];
   const s2=EQUIPOS[visit];
@@ -1048,12 +1036,8 @@ function calcular(local,visit,f1=1.0,f2=1.0){
   const shotStop1=factorShotStopping(local);
   const shotStop2=factorShotStopping(visit);
 
-  // PUNTO 26E — Ajuste por calendario
-  const cal1=factorCalendario(local);
-  const cal2=factorCalendario(visit);
-
-  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*cal1.atk*cal2.def*f1);
-  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*cal2.atk*cal1.def*f2);
+  const l1=Math.max(0.25,(s1.atk*(forma1+0.35))*(1/(s2.def/1.1))*eloP*1.9*localia1*motiv1*sos1*finishing1*shotStop2*f1);
+  const l2=Math.max(0.25,(s2.atk*(forma2+0.35))*(1/(s1.def/1.1))*(1-eloP)*1.9*motiv2*sos2*finishing2*shotStop1*f2);
 
   const disp1=dispEquipo(local,s1);
   const disp2=dispEquipo(visit,s2);
