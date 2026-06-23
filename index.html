@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -927,8 +928,27 @@ function dispEquipo(nombre,datosBase){
   const media=goles.reduce((a,b)=>a+b,0)/goles.length;
   if(media<=0)return DISP_DEFAULT;
   const varianza=goles.reduce((a,b)=>a+Math.pow(b-media,2),0)/goles.length;
-  if(varianza<=media)return 1.0;
-  return parseFloat((varianza/media).toFixed(3));
+
+  // Dispersión base del punto 16
+  const dispBase=varianza<=media?1.0:parseFloat((varianza/media).toFixed(3));
+
+  // PUNTO 16B — Índice de extremidad
+  // Extremidad = |Finishing - MediaLiga|
+  // Equipos con Finishing muy alejado de la media son más
+  // impredecibles — aumentamos ligeramente su dispersión NB.
+  const finishing=factorFinishing(nombre);
+  // Media de Finishing de la liga (aproximación: todos los equipos con historial)
+  const allFinishing=Object.keys(EQUIPOS)
+    .map(eq=>factorFinishing(eq))
+    .filter(f=>f!==1.0); // solo equipos con historial suficiente
+  if(allFinishing.length<3)return dispBase; // sin suficientes datos de liga
+
+  const mediaFinishing=allFinishing.reduce((a,b)=>a+b,0)/allFinishing.length;
+  const extremidad=Math.abs(finishing-mediaFinishing);
+
+  // Ajuste: cada 0.05 de extremidad suma 0.10 a la dispersión, tope +0.30
+  const ajusteExtremidad=Math.min(0.30, extremidad/0.05*0.10);
+  return parseFloat((dispBase+ajusteExtremidad).toFixed(3));
 }
 
 // PUNTO 11 — FACTOR MOTIVACIÓN
